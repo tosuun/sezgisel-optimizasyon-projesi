@@ -34,22 +34,22 @@ def distance(customer_a, customer_b, coordinates): #iki konum arası mesafe
     raw_distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
     return int(raw_distance + 0.5)
-def route_distance(route,coordinates): #bir aracın gidiş dönüş mesafesi
-
+def route_distance(route, distances): #bir aracın gidiş dönüş mesafesi
     total_distance = 0
     previous = 0
+
     for customer in route:
-        total_distance += distance(previous, customer, coordinates)
+        total_distance += distances[previous][customer]
         previous = customer
-    total_distance += distance(previous, 0, coordinates)
+
+    total_distance += distances[previous][0]
+
     return total_distance
-def solution_distance(routes, coordinates): #bütün araçların toplam mesafesi
-
-
+def solution_distance(routes, distances): #bütün araçların toplam mesafesi
     total_distance = 0
 
     for route in routes:
-        total_distance += route_distance(route, coordinates)
+        total_distance += route_distance(route, distances)
 
     return total_distance
 
@@ -85,24 +85,41 @@ def check_vehicle_count(routes, max_vehicles): #kullanılan araç sayısı kontr
             used_vehicles += 1
 
     return used_vehicles <= max_vehicles
-def validate_solution(routes, demands, capacity, max_vehicles): #hata kontrolleri
+def validate_solution(routes, demands, capacity, max_vehicles):
     errors = []
+    visited = []
 
-    customers_ok = check_customers(routes, demands)
+    for route in routes:
+        visited.extend(route)
 
-    if not customers_ok:
-        errors.append("Müşteri listesi hatalı: eksik, tekrarlı veya geçersiz müşteri.")
+    expected = set(demands) - {0}
+
+    missing = expected - set(visited)
+    invalid = set(visited) - expected
+    repeated = {
+        customer for customer in visited
+        if visited.count(customer) > 1
+    }
+
+    if missing:
+        errors.append(f"Eksik müşteriler: {sorted(missing)}")
+
+    if repeated:
+        errors.append(f"Tekrarlı müşteriler: {sorted(repeated)}")
+
+    if invalid:
+        errors.append(f"Geçersiz müşteri numaraları: {sorted(invalid)}")
 
     if not check_vehicle_count(routes, max_vehicles):
         errors.append("Araç sayısı sınırı aşılmış.")
 
-    if customers_ok:
+    # Bilinmeyen müşteri varsa talebini okumaya çalışma.
+    if not invalid:
         if not check_capacity(routes, demands, capacity):
             errors.append("Araç kapasitesi aşılmış.")
 
     return errors
-
-def evaluate(routes, coordinates, demands, capacity,  #çözümün mesafesi ve maliyeti
+def evaluate(routes, distances, demands, capacity,  #çözümün mesafesi ve maliyeti
              max_vehicles, penalty=100):
 
     if not check_customers(routes, demands):
@@ -111,7 +128,7 @@ def evaluate(routes, coordinates, demands, capacity,  #çözümün mesafesi ve m
     if not check_vehicle_count(routes, max_vehicles):
         raise ValueError("Araç sayısı sınırı aşılmış.")
 
-    total_distance = solution_distance(routes, coordinates)
+    total_distance = solution_distance(routes, distances)
     feasible = check_capacity(routes, demands, capacity)
 
     cost = total_distance
@@ -125,10 +142,13 @@ def evaluate(routes, coordinates, demands, capacity,  #çözümün mesafesi ve m
         "cost": cost,
     }
 
-routes = [[1, 4], [2, 5, 3]]
+def build_distance_matrix(coordinates): #bütün nokta çiftlerinin mesafelerini bir kez hesaplayıp saklar.
+    distances = {}
 
-result = evaluate(
-    routes, coordinates, demands, capacity, max_vehicles
-)
+    for a in coordinates:
+        distances[a] = {}
 
-print(result)
+        for b in coordinates:
+            distances[a][b] = distance(a, b, coordinates)
+
+    return distances
