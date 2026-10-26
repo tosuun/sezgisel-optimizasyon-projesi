@@ -20,8 +20,6 @@ demands = {
 capacity = 10
 max_vehicles = 2
 
-routes = [[1, 4], [2, 5, 3]]
-
 def route_load(route, demands): #bir aracın taşıdığı toplam yük
     total_load = 0
 
@@ -126,7 +124,6 @@ def evaluate(routes, coordinates, demands, capacity,  #çözümün mesafesi ve m
         "feasible": feasible,
         "cost": cost,
     }
-
 
 routes = [[1, 4], [2, 5, 3]]
 
