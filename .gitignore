@@ -1,0 +1,18 @@
+# Python geçici dosyaları
+__pycache__/
+*.py[cod]
+
+# Sanal ortamlar
+.venv/
+venv/
+
+# Test önbelleği
+.pytest_cache/
+
+# Yerel ayarlar ve gizli bilgiler
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
