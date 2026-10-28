@@ -5,7 +5,7 @@ from problem import check_capacity, evaluate, route_load, solution_distance
 
 
 def swap_search(routes, distances, demands, capacity):
-    """Bütün müşteri çiftlerinden en fazla mesafe azaltan uygun tek takası yapar."""
+    #Bütün müşteri çiftlerinden en fazla mesafe azaltan uygun tek takası yapar.
     best = copy_solution(routes)
     best_distance = solution_distance(routes, distances)
     positions = [
@@ -33,7 +33,7 @@ def swap_search(routes, distances, demands, capacity):
 
 
 def relocate_search(routes, distances, demands, capacity):
-    """Her müşteriyi sabit sırayla, başka rotadaki en iyi uygun konuma dener."""
+    #Her müşteriyi sabit sırayla, başka rotadaki en iyi uygun konuma dener.
     result = copy_solution(routes)
     customers = [customer for route in routes for customer in route]
 
@@ -65,7 +65,7 @@ def relocate_search(routes, distances, demands, capacity):
 
 
 def repair(routes, distances, demands, capacity, rng):
-    """Uygun tek müşteri taşımalarıyla kapasiteyi onarır; başarısız kalabilir."""
+    #Uygun tek müşteri taşımalarıyla kapasiteyi onarır; başarısız kalabilir.
     result = copy_solution(routes)
 
     while not check_capacity(result, demands, capacity):
@@ -114,7 +114,7 @@ def repair(routes, distances, demands, capacity, rng):
 
 
 def local_search(routes, distances, demands, capacity, max_vehicles, rng, penalty=100):
-    """Tur iyileşmezse önceki çözümü, ayrıca görülen en iyi geçerli planı döndürür."""
+    #Tur iyileşmezse önceki çözümü, ayrıca görülen en iyi geçerli planı döndürür.
     result = copy_solution(routes)
     best_feasible = None
     best_distance = None

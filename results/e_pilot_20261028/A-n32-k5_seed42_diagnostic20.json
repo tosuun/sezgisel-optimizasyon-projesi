@@ -1,0 +1,213 @@
+{
+  "stage": "E_short_pilot_not_paper_replication",
+  "instance": {
+    "name": "A-n32-k5",
+    "dimension": 32,
+    "n_customers": 31,
+    "capacity": 100,
+    "max_vehicles": 5,
+    "vehicle_count_sources": {
+      "NAME": 5,
+      "COMMENT": 5
+    },
+    "original_depot_id": 1,
+    "distance_rule": "floor(euclidean_distance + 0.5)"
+  },
+  "input_files": {
+    "instance_path": "/Users/tosun/Desktop/2026-2027 Güz Dersler/Sezgisel Algoritmalar/proje/data/A-n32-k5.vrp",
+    "solution_path": "/Users/tosun/Desktop/2026-2027 Güz Dersler/Sezgisel Algoritmalar/proje/data/A-n32-k5.sol",
+    "instance_sha256": "2ebedd0631c4c56c08ba3b1476ac874a7d54cc448bd3795de534f43b2c099ce2",
+    "solution_sha256": "a23da588e19d97533c94fb574ed42edfade007465d7448e4840885b0888404ca",
+    "solution_id_convention": "cvrplib"
+  },
+  "reference": {
+    "routes": [
+      [
+        21,
+        31,
+        19,
+        17,
+        13,
+        7,
+        26
+      ],
+      [
+        12,
+        1,
+        16,
+        30
+      ],
+      [
+        27,
+        24
+      ],
+      [
+        29,
+        18,
+        8,
+        9,
+        22,
+        15,
+        10,
+        25,
+        5,
+        20
+      ],
+      [
+        14,
+        28,
+        11,
+        4,
+        23,
+        3,
+        2,
+        6
+      ]
+    ],
+    "reported_cost": 784,
+    "recomputed_cost": 784,
+    "id_convention": "cvrplib",
+    "independent_audit": {
+      "valid": true,
+      "errors": [],
+      "distance": 784,
+      "route_loads": [
+        98,
+        72,
+        44,
+        98,
+        98
+      ],
+      "used_vehicles": 5
+    },
+    "optimum_asserted_by_caller": true
+  },
+  "result": {
+    "best_routes": [
+      [
+        24,
+        27
+      ],
+      [
+        21,
+        31,
+        19,
+        17,
+        13,
+        7,
+        26
+      ],
+      [
+        14,
+        28,
+        11,
+        4,
+        23,
+        2,
+        3,
+        6
+      ],
+      [
+        20,
+        5,
+        25,
+        10,
+        15,
+        22,
+        9,
+        8,
+        18,
+        29
+      ],
+      [
+        12,
+        1,
+        16,
+        30
+      ]
+    ],
+    "distance": 784,
+    "feasible": true,
+    "generations": 11,
+    "partial_generation_targets": 50,
+    "stop_reason": "known_optimum",
+    "seed": 42,
+    "parameters": {
+      "population_size": 93,
+      "mutation_factor": 0.7,
+      "crossover_rate": 0.7,
+      "penalty": 100,
+      "max_generations": 20,
+      "known_optimum": 784
+    },
+    "elapsed_seconds": 5.360243375005666
+  },
+  "independent_audit": {
+    "valid": true,
+    "errors": [],
+    "distance": 784,
+    "route_loads": [
+      44,
+      98,
+      98,
+      98,
+      72
+    ],
+    "used_vehicles": 5
+  },
+  "best_routes_original_node_ids": [
+    [
+      25,
+      28
+    ],
+    [
+      22,
+      32,
+      20,
+      18,
+      14,
+      8,
+      27
+    ],
+    [
+      15,
+      29,
+      12,
+      5,
+      24,
+      3,
+      4,
+      7
+    ],
+    [
+      21,
+      6,
+      26,
+      11,
+      16,
+      23,
+      10,
+      9,
+      19,
+      30
+    ],
+    [
+      13,
+      2,
+      17,
+      31
+    ]
+  ],
+  "gap_percent": 0.0,
+  "python_version": "3.14.6",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "source_sha256": {
+    "problem.py": "6e6290c49cd05b537da417e576f7578c7566a0dee0c06a67dfa3d7498b91ce73",
+    "operators.py": "6ef99e1e333c7f12e63fcc13edf6f5183c4a556e9eddb93b8dbf694a7cfd0dc6",
+    "local_search.py": "f3564857e92054d24d3f395c04f1a48c0222b921743d899840120b27a43aa55e",
+    "solver.py": "57ed2073d6e8492f8c82da7cf97708831c20eec29bb395fc267c4bad0a1335eb",
+    "instance_io.py": "fca8935b7a828723336e424a9608782dedc4f9b1738c3fcb8e54a435b62256ee",
+    "run_pilot.py": "3c20b2687fc372b7eee3471a4683fe1f9cae442a8e3714f1442d4ba5d2b872a8"
+  },
+  "diagnostic_reason": "Five-generation primary pilot returned 786 versus verified optimum 784; same-seed budget extension, primary result preserved."
+}

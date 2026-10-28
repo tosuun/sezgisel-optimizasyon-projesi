@@ -1,0 +1,39 @@
+{
+  "selected_before_pilot_results": true,
+  "catalog_verified_date": "2026-10-28",
+  "catalog_url": "https://galgos.inf.puc-rio.br/cvrplib/en/cvrp/instances",
+  "pilot_parameters": {
+    "max_generations": 5,
+    "seed": 42,
+    "population_size": "3 * n_customers",
+    "mutation_factor": 0.7,
+    "crossover_rate": 0.7,
+    "penalty": 100,
+    "early_stop": "verified_known_optimum",
+    "purpose": "E_short_correctness_and_runtime_pilot_not_paper_replication"
+  },
+  "instances": [
+    {
+      "name": "P-n16-k8",
+      "dimension": 16,
+      "n_customers": 15,
+      "max_vehicles": 8,
+      "capacity": 35,
+      "reference_cost": 450,
+      "proven_optimum_in_cvrplib": true,
+      "instance_url": "https://galgos.inf.puc-rio.br/cvrplib/en/download/instance/75",
+      "solution_url": "https://galgos.inf.puc-rio.br/cvrplib/en/download/bks/75"
+    },
+    {
+      "name": "A-n32-k5",
+      "dimension": 32,
+      "n_customers": 31,
+      "max_vehicles": 5,
+      "capacity": 100,
+      "reference_cost": 784,
+      "proven_optimum_in_cvrplib": true,
+      "instance_url": "https://galgos.inf.puc-rio.br/cvrplib/en/download/instance/4",
+      "solution_url": "https://galgos.inf.puc-rio.br/cvrplib/en/download/bks/4"
+    }
+  ]
+}

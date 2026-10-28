@@ -2,7 +2,7 @@ import math
 
 
 def copy_solution(routes):
-    """Her rota listesini de kopyalayarak bağımsız bir çözüm oluşturur."""
+    #Her rota listesini de kopyalayarak bağımsız bir çözüm oluşturur.
     copied_routes = []
 
     for route in routes:
@@ -12,7 +12,7 @@ def copy_solution(routes):
 
 
 def find_customer(routes, customer):
-    """Müşterinin (rota, konum) bilgisini döndürür; indisler 0'dan başlar."""
+    #Müşterinin (rota, konum) bilgisini döndürür; indisler 0'dan başlar.
     for route_index, route in enumerate(routes):
         for position, current_customer in enumerate(route):
             if current_customer == customer:
@@ -20,9 +20,8 @@ def find_customer(routes, customer):
 
     raise ValueError(f"Müşteri çözümde bulunamadı: {customer}")
 
-
 def initialize_individual(demands, capacity, max_vehicles, rng):
-    """K rota oluşturur; sığmayan müşterileri tek rastgele rotaya ekler."""
+    #K rota oluşturur; sığmayan müşterileri tek rastgele rotaya ekler.
     if not math.isfinite(capacity) or capacity <= 0:
         raise ValueError("Araç kapasitesi pozitif olmalı.")
 
@@ -70,7 +69,7 @@ def initialize_individual(demands, capacity, max_vehicles, rng):
 
 
 def initialize_population(demands, capacity, max_vehicles, population_size, rng):
-    """Birbirinden bağımsız NP başlangıç çözümü üretir."""
+    #Birbirinden bağımsız NP başlangıç çözümü üretir.
     if not isinstance(population_size, int) or population_size < 3:
         raise ValueError("Popülasyon büyüklüğü en az 3 olan bir tam sayı olmalı.")
 
@@ -84,7 +83,7 @@ def initialize_population(demands, capacity, max_vehicles, population_size, rng)
 
 
 def perturbation_move(routes, reference, route_index, position):
-    """Referanstaki konuma göre takas/taşıma yapar; yeni çözüm döndürür."""
+    #Referanstaki konuma göre takas/taşıma yapar; yeni çözüm döndürür.
     if len(routes) != len(reference):
         raise ValueError("Çözüm ve referans aynı sayıda rota listesi içermeli.")
 
@@ -119,7 +118,7 @@ def perturbation_move(routes, reference, route_index, position):
 
 
 def mutate(population, target_index, mutation_factor, rng):
-    """İki farklı referans bireyden, konum hareketleriyle mutant üretir."""
+    #İki farklı referans bireyden, konum hareketleriyle mutant üretir.
     if len(population) < 3:
         raise ValueError("Mutasyon için en az 3 birey gerekli.")
 
@@ -159,7 +158,7 @@ def mutate(population, target_index, mutation_factor, rng):
 
 
 def crossover_exp(target, mutant, crossover_rate, rng):
-    """Target kopyasına mutant konumlarını aktarır; ilk CR aşımında durur."""
+    #Target kopyasına mutant konumlarını aktarır; ilk CR aşımında durur.
     if not 0 <= crossover_rate <= 1:
         raise ValueError("Çaprazlama oranı 0 ile 1 arasında olmalı.")
 

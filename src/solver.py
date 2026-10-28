@@ -10,7 +10,7 @@ from problem import evaluate
 
 
 def select(target, trial, distances, demands, capacity, max_vehicles, penalty=100):
-    """Kesin daha düşük cezalı maliyeti seçer; eşitlikte target kalır."""
+    #Kesin daha düşük cezalı maliyeti seçer; eşitlikte target kalır.
     target_score = evaluate(target, distances, demands, capacity, max_vehicles, penalty)
     trial_score = evaluate(trial, distances, demands, capacity, max_vehicles, penalty)
     chosen = trial if trial_score['cost'] < target_score['cost'] else target
@@ -19,7 +19,7 @@ def select(target, trial, distances, demands, capacity, max_vehicles, penalty=10
 
 def update_best_feasible(best_routes, candidate, distances, demands,
                          capacity, max_vehicles, penalty=100):
-    """İhlalli adayı sonuca katmaz; saklanan planı bağımsız kopya tutar."""
+    #İhlalli adayı sonuca katmaz; saklanan planı bağımsız kopya tutar.
     if candidate is None:
         return copy_solution(best_routes) if best_routes is not None else None
 
@@ -37,7 +37,7 @@ def update_best_feasible(best_routes, candidate, distances, demands,
 def next_generation(population, distances, demands, capacity, max_vehicles,
                     mutation_factor, crossover_rate, rng, penalty=100,
                     best_routes=None, known_optimum=None):
-    """Yeni popülasyon, en iyi geçerli plan ve tamamlanan target sayısını verir."""
+    #Yeni popülasyon, en iyi geçerli plan ve tamamlanan target sayısını verir.
     if len(population) < 3:
         raise ValueError("Nesil üretimi için en az 3 birey gerekli.")
 
@@ -88,7 +88,7 @@ def next_generation(population, distances, demands, capacity, max_vehicles,
 def solve(distances, demands, capacity, max_vehicles, population_size=None,
           mutation_factor=0.7, crossover_rate=0.7, penalty=100,
           max_generations=20, seed=42, known_optimum=None):
-    """CDELS çalıştırır; hiç geçerli plan yoksa rota ve mesafe None döner."""
+    #CDELS çalıştırır; hiç geçerli plan yoksa rota ve mesafe None döner.
     if not 0 < mutation_factor <= 1:
         raise ValueError("Mutasyon faktörü (0, 1] aralığında olmalı.")
     if not 0 <= crossover_rate <= 1:
