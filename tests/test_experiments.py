@@ -324,7 +324,8 @@ class ActualPlanTests(unittest.TestCase):
     def test_current_90_instance_plan_is_valid_without_starting_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             screening=batch.run_experiment(ROOT/'configs/dogrulama.json',output_root=directory)
-            self.assertEqual(screening['planned_runs'],90)
+            self.assertEqual(screening['planned_runs'],270)
+            self.assertEqual(screening['seeds'],[42,43,44])
             self.assertEqual(screening['preflight_errors'],[])
             self.assertTrue(screening['execution_ready'])
             self.assertFalse(list(Path(directory).iterdir()))

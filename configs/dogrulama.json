@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "created_date": "2026-10-28",
+  "created_date": "2026-10-29",
   "instance_manifest": "data/paper90_instances.json",
   "instances": [
     "P-n16-k8",
@@ -117,15 +117,15 @@
   "seed_order": "ascending",
   "instance_order": "n_customers_then_name_ascending",
   "source_baseline_sha256": {
-    "problem.py": "6e6290c49cd05b537da417e576f7578c7566a0dee0c06a67dfa3d7498b91ce73",
-    "operators.py": "4e2268a735e03b4d5a2efb2198be9f98017e4a6dc042ebbf2c8c15f2a7f67d4c",
-    "local_search.py": "476a1fb02de13cb96b54d49a64d4d4f097dd36e46680108f1acb99cd25f582a3",
-    "solver.py": "bdd94712fe37f40c7ad61d13ee0633ccd1b4f4fb4ae07c22dbd9d97478c09f59",
-    "instance_io.py": "fca8935b7a828723336e424a9608782dedc4f9b1738c3fcb8e54a435b62256ee",
-    "run_pilot.py": "3c20b2687fc372b7eee3471a4683fe1f9cae442a8e3714f1442d4ba5d2b872a8",
-    "run_experiments.py": "f41b6766387144a68f55494803d777f6dba29438fed991700da6e624683e18eb"
+    "problem.py": "99df131b501e9fbf3bcf0663b918adcf31136fb8f12d3cbf050f53cff9c9ff43",
+    "operators.py": "679dd8dd431851f6218d260ffbe4a6e822f3a5d1300c92c03433f0b3c66535a8",
+    "local_search.py": "e0ae157b3deb0dd5908324b9694fde73ca43d4fbf15fc203b22e3552f36404a0",
+    "solver.py": "f685cf6a54652bc07c22a07af3c923a4bee4fdca57e8e021ffc63f3e3a82f5f5",
+    "instance_io.py": "582939d75680d962cf49ff3bedeccd4432c3d77a19977bc410887490c7acf686",
+    "run_pilot.py": "ff5de46a361352134484093e0cebf9bac04599aea1114a343eed9c7c9aee4462",
+    "run_experiments.py": "58407af25e977aaae248a524977f0fb0c95694f8c943a723d086b96d667d623a"
   },
-  "environment_baseline_python": "3.14.6",
+  "environment_baseline_python": "3.12.14",
   "require_one_consistent_environment_per_experiment": true,
   "source_and_config_hash_must_be_recorded_per_run": true,
   "overwrite_completed_runs": false,
@@ -138,13 +138,15 @@
   "record_no_feasible_solution_and_errors": true,
   "abort_batch_on_invariant_or_independent_cost_mismatch": true,
   "execution_ready": true,
-  "profile_id": "paper90_screening_v3",
-  "purpose": "preliminary_runtime_and_quality_screening_not_full_paper_validation",
+  "profile_id": "paper90_3repeats",
+  "purpose": "three_repeat_limited_budget_paper_comparison",
   "seeds": [
-    42
+    42,
+    43,
+    44
   ],
-  "repeat_count": 1,
-  "planned_run_count": 90,
+  "repeat_count": 3,
+  "planned_run_count": 270,
   "max_generations_by_group": {
     "A": 20,
     "B": 20,
@@ -155,21 +157,19 @@
   },
   "time_limit_seconds": 120,
   "time_limit_semantics": "Soft limit checked after initialization and between completed targets; active target finishes; cumulative active time and overshoot recorded.",
-  "maximum_nominal_serial_hours_excluding_overshoot": 3,
+  "maximum_nominal_serial_hours_excluding_overshoot": 9,
   "do_not_pool_with_full_profile_results": true,
   "required_stop_reasons": [
     "known_optimum",
     "max_generations",
     "time_limit"
   ],
-  "prepared_stage": "G_distance_delta_optimization_2026-10-28",
-  "previous_profile": "paper90_screening_v2",
+  "prepared_stage": "three_repeat_validation_preparation_2026-10-29",
   "checkpoint_interval_seconds": 5,
   "runner_schema_version": 1,
   "resume_policy": "same identity; interrupted targets resume from last committed RNG/population; completed runs skipped; errors retained",
   "execution_gates_satisfied": [
     "batch_runner_implemented",
     "safe_time_limit_and_checkpoint_implemented"
-  ],
-  "optimization_note": "Integer edge deltas and cached route loads; operator traversal, strict ties, repair RNG, full-round rollback and feasible archive preserved. Time-limited runs may finish more targets; do not pool with V2."
+  ]
 }
