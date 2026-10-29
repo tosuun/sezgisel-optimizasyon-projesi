@@ -51,11 +51,11 @@ class InstanceIOTests(unittest.TestCase):
             ('A-n32-k5', 32, 31, 5, 100, 784),
         ]:
             with self.subTest(name=name):
-                instance = read_instance(ROOT / 'data' / (name + '.vrp'))
+                instance = read_instance(ROOT / 'data' / 'raw' / 'cvrp' / (name + '.vrp'))
                 self.assertEqual((instance['dimension'], instance['n_customers'],
                                   instance['max_vehicles'], instance['capacity']),
                                  (nodes, customers, vehicles, capacity))
-                reference = read_solution(ROOT / 'data' / (name + '.sol'), instance)
+                reference = read_solution(ROOT / 'data' / 'raw' / 'cvrp' / (name + '.sol'), instance)
                 self.assertEqual(reference['recomputed_cost'], cost)
                 audit = run_pilot.audit_solution(reference['routes'], instance)
                 self.assertTrue(audit['valid'])
@@ -170,7 +170,7 @@ class InstanceIOTests(unittest.TestCase):
 
     def test_actual_small_reference_pilot(self):
         record = run_pilot.run_pilot(
-            ROOT / 'data' / 'P-n16-k8.vrp', ROOT / 'data' / 'P-n16-k8.sol',
+            ROOT / 'data' / 'raw' / 'cvrp' / 'P-n16-k8.vrp', ROOT / 'data' / 'raw' / 'cvrp' / 'P-n16-k8.sol',
             max_generations=5, seed=42, known_optimum=450,
         )
         self.assertEqual(record['result']['distance'], 450)

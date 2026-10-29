@@ -1,5 +1,10 @@
-"""Tek depolu EUC_2D CVRPLIB verisini ve açık kimlik kuralıyla çözümü okur."""
-
+"""
+.vrp dosyasından müşteri konumlarını, taleplerini ve araç kapasitesini okur.
+Dosyada depo 1, ilk müşteri 2 numaralıdır; kodda depo 0, ilk müşteri 1 olarak tutulur.
+Bu bilgilerden noktalar arasındaki mesafeleri içeren bir tablo oluşturur.
+.sol dosyasından referans rotaları okur, müşterilerin ve kapasitenin kurallara uygunluğunu kontrol eder.
+Rotaların toplam mesafesini hesaplayıp dosyada yazan değerle karşılaştırır.
+"""
 import math
 from pathlib import Path
 import re
@@ -8,7 +13,6 @@ from problem import build_distance_matrix, solution_distance, validate_solution
 
 
 def read_instance(path, max_vehicles=None):
-    """Dosya kimliklerini depo=0, müşteriler=1..N olacak şekilde eşler."""
     path = Path(path)
     headers = {}
     coordinates = {}
@@ -17,12 +21,14 @@ def read_instance(path, max_vehicles=None):
     section = None
     depot_ended = False
 
+    # Satır numarası, hatalı verinin dosyada nerede olduğunu göstermek için tutulur.
     for line_number, raw in enumerate(path.read_text(encoding='utf-8-sig').splitlines(), 1):
         line = raw.strip()
         if not line:
             continue
         if line.upper() == 'EOF':
             break
+        # Bölüm başlığı, sonraki satırların koordinat mı talep mi olduğunu belirler.
         if line.upper().endswith('_SECTION'):
             section = line.upper()
             if section not in {'NODE_COORD_SECTION', 'DEMAND_SECTION', 'DEPOT_SECTION'}:
@@ -30,6 +36,7 @@ def read_instance(path, max_vehicles=None):
             continue
 
         try:
+            # Aynı nokta kimliği koordinat ve talep bölümlerinde birbirini eşler.
             if section == 'NODE_COORD_SECTION':
                 fields = line.split()
                 if len(fields) != 3:
@@ -55,6 +62,7 @@ def read_instance(path, max_vehicles=None):
                     else:
                         depots.append(value)
             else:
+                # Hem CAPACITY : 100 hem CAPACITY 100 biçimini kabul et.
                 parts = line.split(':', 1) if ':' in line else line.split(None, 1)
                 if len(parts) != 2:
                     raise ValueError('Başlık anahtar ve değer içermeli.')
@@ -68,6 +76,7 @@ def read_instance(path, max_vehicles=None):
         except ValueError as error:
             raise ValueError(f'{path.name}, satır {line_number}: {error}') from error
 
+    # Desteklenmeyen problem veya mesafe türünü sessizce farklı yorumlama.
     if headers.get('TYPE', '').upper() != 'CVRP':
         raise ValueError('Yalnız TYPE=CVRP destekleniyor.')
     if headers.get('EDGE_WEIGHT_TYPE', '').upper() != 'EUC_2D':
@@ -82,6 +91,7 @@ def read_instance(path, max_vehicles=None):
         raise ValueError('DIMENSION ve CAPACITY tam sayı olarak gerekli.') from error
     if dimension < 2 or capacity <= 0:
         raise ValueError('En az bir müşteri ve pozitif kapasite gerekli.')
+    # Her noktanın hem koordinatı hem talebi bulunmalı.
     if len(coordinates) != dimension or set(coordinates) != set(demands):
         raise ValueError('DIMENSION, koordinat ve talep kimlikleri eşleşmiyor.')
     if not depot_ended or len(depots) != 1 or depots[0] not in coordinates:
@@ -92,6 +102,7 @@ def read_instance(path, max_vehicles=None):
         raise ValueError('Depo talebi 0 olmalı; müşteri talebi kapasiteyi aşamaz.')
 
     name = headers.get('NAME', path.stem)
+    # Araç sayısı isimden, başlıktan veya açıklamadan gelebilir; hepsi uyuşmalı.
     vehicle_sources = {}
     if 'VEHICLES' in headers:
         vehicle_sources['VEHICLES'] = int(headers['VEHICLES'])
@@ -112,8 +123,10 @@ def read_instance(path, max_vehicles=None):
     if vehicles < 1:
         raise ValueError('Araç sayısı pozitif olmalı.')
 
+    # Depoyu ilk sıraya koy: içeride depo her zaman 0, müşteriler 1..N olur.
     ordered_nodes = [depot] + sorted(node for node in coordinates if node != depot)
     original_to_internal = {node: index for index, node in enumerate(ordered_nodes)}
+    # Sonuçları dosyadaki özgün nokta numaralarıyla göstermek için ters eşlemeyi sakla.
     internal_to_original = dict(enumerate(ordered_nodes))
     mapped_coordinates = {original_to_internal[node]: value for node, value in coordinates.items()}
     mapped_demands = {original_to_internal[node]: value for node, value in demands.items()}
@@ -143,6 +156,7 @@ def read_solution(path, instance, id_convention='cvrplib'):
         line = raw.strip()
         if not line or line.upper() == 'EOF':
             continue
+        # Örnek: Route #3: 27 24 satırından rota numarası ve müşteri listesi ayrılır.
         match = re.fullmatch(r'Route\s*#\s*(\d+)\s*:\s*(.*)', line, re.IGNORECASE)
         if match:
             label = int(match.group(1))
@@ -152,6 +166,7 @@ def read_solution(path, instance, id_convention='cvrplib'):
             route = []
             for value in match.group(2).split():
                 node = int(value)
+                # CVRPLIB çözümünde 1 ilk müşteridir; özgün kimlik seçildiyse önce dönüştür.
                 if id_convention == 'original':
                     if node not in instance['original_to_internal']:
                         raise ValueError(f'Bilinmeyen özgün kimlik: {node}')
@@ -169,9 +184,11 @@ def read_solution(path, instance, id_convention='cvrplib'):
 
     if not routes or cost is None or not math.isfinite(cost) or cost < 0:
         raise ValueError('Referans çözüm rotalar ve sonlu, negatif olmayan Cost içermeli.')
+    # Referans çözüm de bütün müşteri, kapasite ve araç sayısı kurallarını sağlamalı.
     errors = validate_solution(routes, instance['demands'], instance['capacity'], instance['max_vehicles'])
     if errors:
         raise ValueError('Referans çözüm geçersiz: ' + '; '.join(errors))
+    # Cost satırına güvenmekle yetinme; rotaların mesafesini yeniden hesapla.
     recomputed = solution_distance(routes, instance['distances'])
     if recomputed != cost:
         raise ValueError(f'Referans maliyeti eşleşmiyor: dosya={cost}, hesap={recomputed}')

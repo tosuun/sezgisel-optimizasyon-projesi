@@ -1,0 +1,302 @@
+{
+  "run_identity": {
+    "experiment_identity_sha256": "818bc1da2558489d43a912905d357eea8395ea96c03499dc9e07b8aac22113cc",
+    "name": "P-n51-k10",
+    "seed": 42,
+    "instance_sha256": "79984f78057bad09655c1c5c32ab146231714c2d99bfcdfdafe3203ed70165e9",
+    "solution_sha256": "c84e6d0547606508e9253c45960a2aa6c8f3f797b1405d4bc4130de090f1b0f9"
+  },
+  "run_id": "P-n51-k10_seed42",
+  "attempt": 1,
+  "status": "completed",
+  "started_utc": "2026-10-28T19:54:52.916179+00:00",
+  "finished_utc": "2026-10-28T19:54:59.984511+00:00",
+  "profile_id": "paper90_screening_v3",
+  "purpose": "preliminary_runtime_and_quality_screening_not_full_paper_validation",
+  "instance": {
+    "name": "P-n51-k10",
+    "dimension": 51,
+    "n_customers": 50,
+    "capacity": 80,
+    "max_vehicles": 10
+  },
+  "reference": {
+    "routes": [
+      [
+        42,
+        40,
+        19,
+        41,
+        13
+      ],
+      [
+        46,
+        50,
+        21,
+        34,
+        30,
+        9
+      ],
+      [
+        49,
+        10,
+        39,
+        33,
+        45,
+        15
+      ],
+      [
+        8,
+        26,
+        31,
+        28,
+        22,
+        32
+      ],
+      [
+        27,
+        6,
+        14,
+        25
+      ],
+      [
+        47,
+        4,
+        18
+      ],
+      [
+        5,
+        37,
+        44,
+        17,
+        12
+      ],
+      [
+        48,
+        23,
+        7,
+        43,
+        24
+      ],
+      [
+        29,
+        20,
+        35,
+        36,
+        3,
+        1
+      ],
+      [
+        11,
+        2,
+        16,
+        38
+      ]
+    ],
+    "reported_cost": 741,
+    "recomputed_cost": 741,
+    "id_convention": "cvrplib",
+    "independent_audit": {
+      "valid": true,
+      "errors": [],
+      "distance": 741,
+      "route_loads": [
+        79,
+        79,
+        80,
+        75,
+        79,
+        75,
+        78,
+        73,
+        80,
+        79
+      ],
+      "used_vehicles": 10
+    }
+  },
+  "result": {
+    "best_routes": [
+      [
+        1,
+        22,
+        3,
+        20,
+        29,
+        16
+      ],
+      [
+        49,
+        9,
+        34,
+        50,
+        38
+      ],
+      [
+        48,
+        23,
+        24,
+        43,
+        7,
+        26
+      ],
+      [
+        37,
+        45,
+        33,
+        39,
+        30,
+        10
+      ],
+      [
+        8,
+        31,
+        28,
+        36,
+        35,
+        21
+      ],
+      [
+        42,
+        19,
+        40,
+        41,
+        13
+      ],
+      [
+        11,
+        2,
+        32,
+        27
+      ],
+      [
+        12,
+        4,
+        18
+      ],
+      [
+        47,
+        17,
+        44,
+        15,
+        5,
+        46
+      ],
+      [
+        6,
+        14,
+        25
+      ]
+    ],
+    "distance": 774,
+    "feasible": true,
+    "generations": 20,
+    "partial_generation_targets": 0,
+    "stop_reason": "max_generations",
+    "seed": 42,
+    "parameters": {
+      "population_size": 150,
+      "mutation_factor": 0.7,
+      "crossover_rate": 0.7,
+      "penalty": 100,
+      "max_generations": 20,
+      "known_optimum": 741,
+      "time_limit_seconds": 120
+    },
+    "elapsed_seconds": 7.062081165990094,
+    "time_limit_overshoot_seconds": 0,
+    "resumed_from_checkpoint": false
+  },
+  "independent_audit": {
+    "valid": true,
+    "errors": [],
+    "distance": 774,
+    "route_loads": [
+      80,
+      80,
+      80,
+      80,
+      79,
+      79,
+      76,
+      79,
+      80,
+      64
+    ],
+    "used_vehicles": 10
+  },
+  "gap_percent": 4.4534412955465585,
+  "best_routes_original_node_ids": [
+    [
+      2,
+      23,
+      4,
+      21,
+      30,
+      17
+    ],
+    [
+      50,
+      10,
+      35,
+      51,
+      39
+    ],
+    [
+      49,
+      24,
+      25,
+      44,
+      8,
+      27
+    ],
+    [
+      38,
+      46,
+      34,
+      40,
+      31,
+      11
+    ],
+    [
+      9,
+      32,
+      29,
+      37,
+      36,
+      22
+    ],
+    [
+      43,
+      20,
+      41,
+      42,
+      14
+    ],
+    [
+      12,
+      3,
+      33,
+      28
+    ],
+    [
+      13,
+      5,
+      19
+    ],
+    [
+      48,
+      18,
+      45,
+      16,
+      6,
+      47
+    ],
+    [
+      7,
+      15,
+      26
+    ]
+  ],
+  "metadata_file": "../../metadata.json"
+}

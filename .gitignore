@@ -6,14 +6,29 @@ __pycache__/
 .venv/
 venv/
 
-# Test önbelleği
+# Test ve araç önbellekleri
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Yerel ayarlar ve gizli bilgiler
 .env
 .env.*
 !.env.example
 
-# macOS
+# İşletim sistemi dosyaları
 .DS_Store
-E_PILOT_DOGRULAMA.md
+._*
+Thumbs.db
+
+# Yeniden üretilebilir büyük ara kayıtlar ve çalışma günlükleri
+# Nihai result.json, metadata.json, preflight.json ve summary.json takip edilir.
+/results/experiments/**/checkpoint.json
+/results/experiments/**/attempt_*.json
+/results/experiments/**/events.jsonl
+/results/experiments/**/lock.json
+
+# Sunum dosyaları ve kişisel sunum notları
+/sunum/

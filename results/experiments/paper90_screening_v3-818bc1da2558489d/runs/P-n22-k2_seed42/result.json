@@ -1,0 +1,151 @@
+{
+  "run_identity": {
+    "experiment_identity_sha256": "818bc1da2558489d43a912905d357eea8395ea96c03499dc9e07b8aac22113cc",
+    "name": "P-n22-k2",
+    "seed": 42,
+    "instance_sha256": "bef647fd53eb85de8d555650f07c9c6dda4830bfddcedf6aedbc128ff622272e",
+    "solution_sha256": "e65416054577f6079c6bf54f8e8ee6cf5192f9d839e12a69c2c863fa625d261b"
+  },
+  "run_id": "P-n22-k2_seed42",
+  "attempt": 1,
+  "status": "completed",
+  "started_utc": "2026-10-28T19:52:28.893983+00:00",
+  "finished_utc": "2026-10-28T19:52:29.313763+00:00",
+  "profile_id": "paper90_screening_v3",
+  "purpose": "preliminary_runtime_and_quality_screening_not_full_paper_validation",
+  "instance": {
+    "name": "P-n22-k2",
+    "dimension": 22,
+    "n_customers": 21,
+    "capacity": 160,
+    "max_vehicles": 2
+  },
+  "reference": {
+    "routes": [
+      [
+        6,
+        2,
+        13,
+        9,
+        7,
+        21,
+        17,
+        14,
+        5,
+        20
+      ],
+      [
+        16,
+        1,
+        10,
+        8,
+        18,
+        19,
+        3,
+        12,
+        15,
+        11,
+        4
+      ]
+    ],
+    "reported_cost": 216,
+    "recomputed_cost": 216,
+    "id_convention": "cvrplib",
+    "independent_audit": {
+      "valid": true,
+      "errors": [],
+      "distance": 216,
+      "route_loads": [
+        159,
+        149
+      ],
+      "used_vehicles": 2
+    }
+  },
+  "result": {
+    "best_routes": [
+      [
+        4,
+        11,
+        15,
+        12,
+        3,
+        19,
+        18,
+        8,
+        10,
+        1,
+        16
+      ],
+      [
+        20,
+        5,
+        14,
+        17,
+        21,
+        7,
+        9,
+        13,
+        2,
+        6
+      ]
+    ],
+    "distance": 216,
+    "feasible": true,
+    "generations": 11,
+    "partial_generation_targets": 60,
+    "stop_reason": "known_optimum",
+    "seed": 42,
+    "parameters": {
+      "population_size": 63,
+      "mutation_factor": 0.7,
+      "crossover_rate": 0.7,
+      "penalty": 100,
+      "max_generations": 20,
+      "known_optimum": 216,
+      "time_limit_seconds": 120
+    },
+    "elapsed_seconds": 0.41754733299603686,
+    "time_limit_overshoot_seconds": 0,
+    "resumed_from_checkpoint": false
+  },
+  "independent_audit": {
+    "valid": true,
+    "errors": [],
+    "distance": 216,
+    "route_loads": [
+      149,
+      159
+    ],
+    "used_vehicles": 2
+  },
+  "gap_percent": 0.0,
+  "best_routes_original_node_ids": [
+    [
+      5,
+      12,
+      16,
+      13,
+      4,
+      20,
+      19,
+      9,
+      11,
+      2,
+      17
+    ],
+    [
+      21,
+      6,
+      15,
+      18,
+      22,
+      8,
+      10,
+      14,
+      3,
+      7
+    ]
+  ],
+  "metadata_file": "../../metadata.json"
+}

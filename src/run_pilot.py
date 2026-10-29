@@ -14,6 +14,7 @@ from solver import solve
 
 def audit_solution(routes, instance):
     """Arama maliyetine/matrisine güvenmeden koordinatlardan tekrar denetler."""
+    # Her müşteriden tam bir tane beklenir; Counter eksik ve tekrarları birlikte yakalar.
     expected = {customer: 1 for customer in instance['demands'] if customer != 0}
     visited = Counter(customer for route in routes for customer in route)
     errors = []
@@ -29,10 +30,12 @@ def audit_solution(routes, instance):
         for route in routes:
             load = sum(instance['demands'][customer] for customer in route)
             loads.append(load)
+            # Depodan çıkış ve depoya dönüş bağlantılarını açıkça ekle.
             path = [0] + route + [0]
             for a, b in zip(path, path[1:]):
                 x1, y1 = instance['coordinates'][a]
                 x2, y2 = instance['coordinates'][b]
+                # Aramanın mesafe matrisini kullanmadan koordinatlardan bağımsız hesap yap.
                 distance += math.floor(math.hypot(x2 - x1, y2 - y1) + 0.5)
         if any(load > instance['capacity'] for load in loads):
             errors.append('Araç kapasitesi aşılmış.')
@@ -52,6 +55,7 @@ def run_pilot(instance_path, solution_path, max_generations=5, seed=42,
     if known_optimum is not None and known_optimum != reference['reported_cost']:
         raise ValueError('Girilen bilinen optimum, doğrulanmış referansla eşleşmiyor.')
 
+    # Referans rotaları başlangıç olarak verme; algoritma kendi popülasyonunu üretir.
     result = solve(
         instance['distances'], instance['demands'], instance['capacity'], instance['max_vehicles'],
         population_size=3 * instance['n_customers'], mutation_factor=0.7,
@@ -68,10 +72,12 @@ def run_pilot(instance_path, solution_path, max_generations=5, seed=42,
         if known_optimum is not None and audit['distance'] < known_optimum:
             raise ValueError('Bulunan maliyet bilinen optimumun altında: veri/mesafe/kısıtlar incelenmeli.')
         cost = reference['reported_cost']
+        # Sapma yüzdesi: bulunan mesafenin referansın ne kadar üstünde olduğunu gösterir.
         gap = 100 * (result['distance'] - cost) / cost if cost else (0 if result['distance'] == 0 else None)
         original_routes = [[instance['internal_to_original'][c] for c in route]
                            for route in result['best_routes']]
 
+    # Sonucun hangi kod sürümüyle üretildiğini kaydet.
     source_hashes = {
         name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
         for name in ['problem.py', 'operators.py', 'local_search.py', 'solver.py', 'instance_io.py', 'run_pilot.py']
@@ -115,6 +121,7 @@ def main():
     text = json.dumps(record, ensure_ascii=False, indent=2) + '\n'
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
+        # x kipi, aynı isimli eski bir sonucu yanlışlıkla ezmeyi engeller.
         with args.output.open('x') as file:
             file.write(text)
     print(text, end='')

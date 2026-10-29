@@ -1,0 +1,24 @@
+{
+  "experiment_id": "paper90_screening_v3-818bc1da2558489d",
+  "output_directory": "/Users/tosun/Desktop/2026-2027 Güz Dersler/Sezgisel Algoritmalar/proje/results/experiments/paper90_screening_v3-818bc1da2558489d",
+  "profile_id": "paper90_screening_v3",
+  "planned_runs": 90,
+  "instance_count": 90,
+  "seeds": [
+    42
+  ],
+  "execution_ready": true,
+  "preflight_errors": [],
+  "baseline_changed_files": [],
+  "status": "completed",
+  "terminal_runs": 90,
+  "valid_runs": 90,
+  "no_feasible_solution_runs": 0,
+  "interrupted_attempts": 0,
+  "error_attempts": 0,
+  "pending_runs": 0,
+  "executed_this_invocation": 90,
+  "skipped_completed": 0,
+  "last_run": "M-n200-k17_seed42",
+  "updated_utc": "2026-10-28T20:19:00.854197+00:00"
+}

@@ -1,0 +1,244 @@
+{
+  "run_identity": {
+    "experiment_identity_sha256": "818bc1da2558489d43a912905d357eea8395ea96c03499dc9e07b8aac22113cc",
+    "name": "P-n45-k5",
+    "seed": 42,
+    "instance_sha256": "35a678e55fc5a0b9371a76d77a59d698da4df2c625ef6928ac0eac96912b15ca",
+    "solution_sha256": "68cb1a6de37fc312e1b4ab0c2a704ce0b5331ef2aea9d1e72c8deab11400b804"
+  },
+  "run_id": "P-n45-k5_seed42",
+  "attempt": 1,
+  "status": "completed",
+  "started_utc": "2026-10-28T19:53:47.606224+00:00",
+  "finished_utc": "2026-10-28T19:53:52.996189+00:00",
+  "profile_id": "paper90_screening_v3",
+  "purpose": "preliminary_runtime_and_quality_screening_not_full_paper_validation",
+  "instance": {
+    "name": "P-n45-k5",
+    "dimension": 45,
+    "n_customers": 44,
+    "capacity": 150,
+    "max_vehicles": 5
+  },
+  "reference": {
+    "routes": [
+      [
+        32,
+        1,
+        22,
+        20,
+        35,
+        36,
+        3,
+        28,
+        31,
+        26,
+        8
+      ],
+      [
+        11,
+        16,
+        2,
+        29,
+        21,
+        34,
+        30,
+        9,
+        38
+      ],
+      [
+        18,
+        13,
+        41,
+        40,
+        19,
+        42,
+        44,
+        17,
+        4
+      ],
+      [
+        5,
+        10,
+        39,
+        33,
+        15,
+        37,
+        12
+      ],
+      [
+        6,
+        14,
+        25,
+        24,
+        43,
+        7,
+        23,
+        27
+      ]
+    ],
+    "reported_cost": 510,
+    "recomputed_cost": 510,
+    "id_convention": "cvrplib",
+    "independent_audit": {
+      "valid": true,
+      "errors": [],
+      "distance": 510,
+      "route_loads": [
+        149,
+        149,
+        148,
+        111,
+        135
+      ],
+      "used_vehicles": 5
+    }
+  },
+  "result": {
+    "best_routes": [
+      [
+        27,
+        6,
+        23,
+        7,
+        43,
+        24,
+        25,
+        14
+      ],
+      [
+        11,
+        16,
+        9,
+        30,
+        34,
+        21,
+        29,
+        2,
+        32
+      ],
+      [
+        5,
+        38,
+        10,
+        39,
+        33,
+        15,
+        37,
+        12
+      ],
+      [
+        1,
+        22,
+        20,
+        35,
+        36,
+        3,
+        28,
+        31,
+        26,
+        8
+      ],
+      [
+        4,
+        17,
+        44,
+        42,
+        40,
+        19,
+        41,
+        13,
+        18
+      ]
+    ],
+    "distance": 513,
+    "feasible": true,
+    "generations": 20,
+    "partial_generation_targets": 0,
+    "stop_reason": "max_generations",
+    "seed": 42,
+    "parameters": {
+      "population_size": 132,
+      "mutation_factor": 0.7,
+      "crossover_rate": 0.7,
+      "penalty": 100,
+      "max_generations": 20,
+      "known_optimum": 510,
+      "time_limit_seconds": 120
+    },
+    "elapsed_seconds": 5.3845682500104886,
+    "time_limit_overshoot_seconds": 0,
+    "resumed_from_checkpoint": false
+  },
+  "independent_audit": {
+    "valid": true,
+    "errors": [],
+    "distance": 513,
+    "route_loads": [
+      135,
+      146,
+      126,
+      137,
+      148
+    ],
+    "used_vehicles": 5
+  },
+  "gap_percent": 0.5882352941176471,
+  "best_routes_original_node_ids": [
+    [
+      28,
+      7,
+      24,
+      8,
+      44,
+      25,
+      26,
+      15
+    ],
+    [
+      12,
+      17,
+      10,
+      31,
+      35,
+      22,
+      30,
+      3,
+      33
+    ],
+    [
+      6,
+      39,
+      11,
+      40,
+      34,
+      16,
+      38,
+      13
+    ],
+    [
+      2,
+      23,
+      21,
+      36,
+      37,
+      4,
+      29,
+      32,
+      27,
+      9
+    ],
+    [
+      5,
+      18,
+      45,
+      43,
+      41,
+      20,
+      42,
+      14,
+      19
+    ]
+  ],
+  "metadata_file": "../../metadata.json"
+}

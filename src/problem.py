@@ -1,24 +1,5 @@
 import math
-
-# 0 depo, 1–5 müşteriler
-coordinates = {
-    0: (0, 0),
-    1: (3, 0),
-    2: (0, 4),
-    3: (3, 4),
-    4: (6, 0),
-    5: (6, 4),
-}
-demands = {
-    0: 0,
-    1: 6,
-    2: 3,
-    3: 5,
-    4: 4,
-    5: 2,
-}
-capacity = 10
-max_vehicles = 2
+from collections import Counter
 
 def route_load(route, demands): #bir aracın taşıdığı toplam yük
     total_load = 0
@@ -33,15 +14,18 @@ def distance(customer_a, customer_b, coordinates): #iki konum arası mesafe
 
     raw_distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
+    # CVRPLIB kuralı: .5 ve üzerini yukarı yuvarla; round() burada aynı sonucu vermeyebilir.
     return int(raw_distance + 0.5)
 def route_distance(route, distances): #bir aracın gidiş dönüş mesafesi
     total_distance = 0
+    # Araç depodan çıkar; rota listesinde depo ayrıca yazılı değildir.
     previous = 0
 
     for customer in route:
         total_distance += distances[previous][customer]
         previous = customer
 
+    # Son müşteriden depoya dönüşü de toplam mesafeye ekle.
     total_distance += distances[previous][0]
 
     return total_distance
@@ -76,6 +60,7 @@ def check_customers(routes, demands): #her müşteri tam bir kez bulunuyor mu ko
         if customer != 0:  # Depoyu müşteri listesine katma
             expected.append(customer)
 
+    # Sıralı listeler eşitse her müşteri tam bir kez bulunur; tekrarlar da yakalanır.
     return sorted(visited) == sorted(expected)
 def check_vehicle_count(routes, max_vehicles): #kullanılan araç sayısı kontrolü
     used_vehicles = 0
@@ -92,13 +77,14 @@ def validate_solution(routes, demands, capacity, max_vehicles):
     for route in routes:
         visited.extend(route)
 
+    # Depoyu müşteri kümesinden çıkar; eksik ve yabancı kimlikleri ayrı bul.
     expected = set(demands) - {0}
 
     missing = expected - set(visited)
     invalid = set(visited) - expected
     repeated = {
-        customer for customer in visited
-        if visited.count(customer) > 1
+        customer for customer, count in Counter(visited).items()
+        if count > 1
     }
 
     if missing:
@@ -133,6 +119,7 @@ def evaluate(routes, distances, demands, capacity,  #çözümün mesafesi ve mal
 
     cost = total_distance
 
+    # Ceza, kapasite aşan çözümün toplamına bir kez eklenir; müşteri başına değildir.
     if not feasible:
         cost += penalty
 

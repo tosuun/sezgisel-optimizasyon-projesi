@@ -6,6 +6,7 @@ def copy_solution(routes):
     copied_routes = []
 
     for route in routes:
+        # Yalnız dış listeyi kopyalamak iç rotaları ortak bırakır; onları da ayır.
         copied_routes.append(route.copy())
 
     return copied_routes
@@ -44,11 +45,13 @@ def initialize_individual(demands, capacity, max_vehicles, rng):
     if sum(demands[customer] for customer in customers) > capacity * max_vehicles:
         raise ValueError("Toplam talep, araçların toplam kapasitesini aşıyor.")
 
+    # Her araç için ayrı bir rota listesi oluştur; boş rotalar da korunur.
     routes = [[] for _ in range(max_vehicles)]
     remaining = customers
 
     for route in routes:
         candidates = remaining.copy()
+        # Tohuma bağlı rastgele sıra, başlangıç çözümlerinin farklılaşmasını sağlar.
         rng.shuffle(candidates)
         remaining = []
         load = 0
@@ -58,6 +61,7 @@ def initialize_individual(demands, capacity, max_vehicles, rng):
                 route.append(customer)
                 load += demands[customer]
             else:
+                # Bu araca sığmayan müşteriyi sonraki araç için beklet.
                 remaining.append(customer)
 
     # Bütün müşteriler çözümde bulunmalı; kapasite ihlali cezayla ele alınır.
@@ -93,6 +97,7 @@ def perturbation_move(routes, reference, route_index, position):
     if not isinstance(position, int) or not 0 <= position < len(reference[route_index]):
         raise ValueError("Referans rota konumu geçersiz.")
 
+    # Referans konumdaki müşteriyi seç; diğer çözümde aynı konuma getirmeyi dene.
     customer = reference[route_index][position]
 
     if customer == 0:
@@ -137,6 +142,7 @@ def mutate(population, target_index, mutation_factor, rng):
     possible_indices = [
         index for index in range(len(population)) if index != target_index
     ]
+    # Hedef dışında iki farklı birey seç; biri başlangıç, diğeri konum rehberidir.
     base_index, reference_index = rng.sample(possible_indices, 2)
     base = population[base_index]
     reference = population[reference_index]
@@ -147,6 +153,7 @@ def mutate(population, target_index, mutation_factor, rng):
             raise ValueError("Referans bireyler hedefle aynı rota sayısı ve müşterileri içermeli.")
 
     mutant = copy_solution(base)
+    # F, kaç müşteriye hareket uygulanacağını belirler; kesirli sonuç yukarı yuvarlanır.
     movement_count = math.ceil(len(customers) * mutation_factor / 2)
     selected_customers = rng.sample(customers, movement_count)
 
@@ -174,10 +181,12 @@ def crossover_exp(target, mutant, crossover_rate, rng):
     def apply_component(route_index, position):
         nonlocal trial
         customer = mutant[route_index][position]
+        # Daha önce işlenen müşteriye yeniden konum aktarımı uygulama.
         if customer in closed:
             return
 
         if position < len(trial[route_index]):
+            # Takasta yerinden çıkan müşteriyi de işlenmiş olarak işaretle.
             closed.add(trial[route_index][position])
 
         trial = perturbation_move(trial, mutant, route_index, position)
@@ -192,6 +201,7 @@ def crossover_exp(target, mutant, crossover_rate, rng):
     # Tarama rastgele konumdan değil, ilk rotadan başlar.
     for route_index, route in enumerate(mutant):
         for position in range(len(route)):
+            # İlk başarısız CR kontrolü tüm çaprazlamayı bitirir.
             if rng.random() > crossover_rate:
                 return trial
             apply_component(route_index, position)

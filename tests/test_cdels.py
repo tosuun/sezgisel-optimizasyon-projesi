@@ -337,7 +337,7 @@ class SolverTests(unittest.TestCase):
     def test_imports_do_not_print_or_start_pilot(self):
         src = str(Path(__file__).resolve().parents[1] / 'src')
         command = ('import sys; sys.path.insert(0, ' + repr(src)
-                   + '); import problem, operators, local_search, solver, run_small')
+                   + '); import problem, operators, local_search, solver')
         result = subprocess.run([sys.executable, '-B', '-c', command],
                                 capture_output=True, text=True, check=True)
         self.assertEqual(result.stdout, '')
