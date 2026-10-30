@@ -26,7 +26,8 @@ class AnalysisTests(unittest.TestCase):
         self.config = analysis.read_json(ROOT / 'configs/dogrulama.json')
         self.config.update(profile_id='analysis_fixture', instances=['P-n16-k8', 'A-n32-k5'],
                            instance_count=2, group_counts={'P': 1, 'A': 1}, seeds=[42, 43, 44],
-                           repeat_count=3, planned_run_count=6)
+                           repeat_count=3, planned_run_count=6, time_limit_seconds=120,
+                           max_generations_by_group={group: 20 for group in 'ABPEFM'})
         self.path = self.directory / 'fixture.json'
         self.path.write_text(json.dumps(self.config))
         # Yalnız plan hazırlanır; çözücü çalıştırılmaz. Sonuçlar bilinen referanslardan kurulur.
@@ -51,6 +52,8 @@ class AnalysisTests(unittest.TestCase):
                               crossover_rate=self.config['algorithm']['crossover_rate'],
                               penalty=self.config['algorithm']['penalty'], max_generations=20,
                               time_limit_seconds=120, known_optimum=entry['reference_cost'])
+            if self.config['algorithm'].get('implementation_protocol'):
+                parameters['implementation_protocol'] = self.config['algorithm']['implementation_protocol']
             record = {
                 'run_identity': {'experiment_identity_sha256': analysis.digest(prepared['identity']),
                                  'name': name, 'seed': seed, 'instance_sha256': entry['vrp_sha256'],
@@ -129,6 +132,22 @@ class AnalysisTests(unittest.TestCase):
         for limit, expected in [(37, '37 s (yumuşak)'), (None, 'Sınır yok')]:
             data['config']['time_limit_seconds'] = limit
             self.assertIn(expected, analysis.comparison_tables(data))
+
+    def test_paper_budget_and_cpu_table_column_counts_are_reported_correctly(self):
+        self.assertTrue(analysis.paper_budget_matches(analysis.read_json(ROOT/'configs/dogrulama.json')))
+        data = analysis.analyze(self.experiment)
+        self.assertFalse(analysis.paper_budget_matches(data['config']))
+        text = analysis.comparison_tables(data)
+        self.assertIn('sınırlı bütçeli ön deney', text)
+        for line in text.split('## Tablo 12')[1].splitlines():
+            if line.startswith('|'):
+                self.assertEqual(line.count('|'), 6)
+        data['config'].update(repeat_count=10,time_limit_seconds=None,
+                             max_generations_by_group={group:500000 if group=='M' else 200000 for group in 'ABPEFM'})
+        text = analysis.comparison_tables(data)
+        self.assertIn('Her iki tarafta da problem başına 10 tekrar', text)
+        self.assertIn('bildirilen deney bütçesiyle eşleştirilmiştir', text)
+        self.assertNotIn('bu sınırlı bütçeli ön deney', text)
 
 
 if __name__ == '__main__':

@@ -26,7 +26,7 @@ MATRIX = build_distance_matrix(COORDS)
 class SolverControlTests(unittest.TestCase):
     def test_zero_time_limit_keeps_initial_best_and_saves_finished_state(self):
         saved = []
-        result = solver.solve(MATRIX, DEMANDS, 10, 2, time_limit_seconds=0,
+        result = solver.solve(MATRIX, DEMANDS, 11, 2, time_limit_seconds=0,
                               checkpoint_callback=saved.append)
         self.assertEqual(result['stop_reason'], 'time_limit')
         self.assertEqual(result['generations'], 0)
@@ -126,6 +126,18 @@ class SolverControlTests(unittest.TestCase):
         self.assertEqual(result['stop_reason'], 'time_limit')
         self.assertGreaterEqual(result['elapsed_seconds'], 101)
         self.assertGreaterEqual(result['time_limit_overshoot_seconds'], 1)
+
+    def test_cpu_time_is_saved_and_resumed_separately_from_elapsed_time(self):
+        saved = []
+        with patch.object(solver.time, 'process_time', side_effect=[10., 11., 12., 13.]):
+            result = solver.solve(MATRIX, DEMANDS, 11, 2, max_generations=0,
+                                  checkpoint_callback=saved.append)
+        self.assertEqual(result['cpu_seconds'], 3)
+        self.assertEqual(saved[-1]['cpu_seconds'], 3)
+        resumed = solver.solve(MATRIX, DEMANDS, 11, 2, max_generations=0, resume_state=saved[-1])
+        self.assertEqual(resumed['cpu_seconds'], 3)
+        self.assertEqual(resumed['elapsed_seconds'], result['elapsed_seconds'])
+
 
 
 class BatchTests(unittest.TestCase):
@@ -321,13 +333,17 @@ class BatchTests(unittest.TestCase):
 
 
 class ActualPlanTests(unittest.TestCase):
-    def test_current_90_instance_plan_is_valid_without_starting_runs(self):
+    def test_paper_900_run_plan_is_ready_without_starting_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             screening=batch.run_experiment(ROOT/'configs/dogrulama.json',output_root=directory)
-            self.assertEqual(screening['planned_runs'],270)
-            self.assertEqual(screening['seeds'],[42,43,44])
+            self.assertEqual(screening['planned_runs'],900)
+            self.assertEqual(screening['seeds'],list(range(1,11)))
             self.assertEqual(screening['preflight_errors'],[])
             self.assertTrue(screening['execution_ready'])
+            config = json.loads((ROOT/'configs/dogrulama.json').read_text())
+            self.assertIsNone(config['time_limit_seconds'])
+            self.assertEqual(config['max_generations_by_group']['M'],500000)
+            self.assertEqual(config['max_generations_by_group']['A'],200000)
             self.assertFalse(list(Path(directory).iterdir()))
 
 

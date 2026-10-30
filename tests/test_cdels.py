@@ -52,14 +52,17 @@ class CrossRandom:
         self.route = route
         self.position = position
         self.checks = 0
+        self.range_calls = 0
 
     def choice(self, routes):
         assert self.route in routes
         return self.route
 
     def randrange(self, size):
-        assert self.position < size
-        return self.position
+        value = self.route if self.range_calls == 0 else self.position
+        self.range_calls += 1
+        assert value < size
+        return value
 
     def random(self):
         self.checks += 1
@@ -101,28 +104,15 @@ class OperatorsTests(unittest.TestCase):
             [[1, 4], [3, 5, 2]], [[1, 4, 5], [3, 2]], 0, 2
         ), [[1, 4, 5], [3, 2]])
         source = [[1, 2], [3]]
-        self.assertEqual(op.perturbation_move(source, [[1, 2, 3], []], 0, 2), source)
+        self.assertEqual(op.perturbation_move(source, [[1, 2, 3], []], 0, 2), [[1, 2, 3], []])
 
-    def test_mutation_attempt_count_and_distinct_customers(self):
-        class RecordingRandom(random.Random):
-            def __init__(self):
-                super().__init__(42)
-                self.samples = []
-
-            def sample(self, values, count):
-                chosen = super().sample(values, count)
-                self.samples.append(chosen)
-                return chosen
-
-        population = [VALID, OVERLOADED, [[4, 1], [3, 5, 2]]]
+    def test_mutation_uses_published_count_and_preserves_customers(self):
+        population = [VALID, OVERLOADED, [[4, 1], [3, 5, 2]], VALID]
         for factor, expected in [(0.01, 1), (0.7, 2), (1, 3)]:
-            rng = RecordingRandom()
             with patch.object(op, 'perturbation_move', wraps=op.perturbation_move) as move:
-                op.mutate(population, 0, factor, rng)
-            self.assertEqual(set(rng.samples[0]), {1, 2})
-            self.assertEqual(len(rng.samples[1]), expected)
-            self.assertEqual(len(set(rng.samples[1])), expected)
+                result = op.mutate(population, 0, factor, random.Random(42))
             self.assertEqual(move.call_count, expected)
+            self.assertEqual(sorted(c for route in result for c in route), [1,2,3,4,5])
 
     def test_nonfinite_initialization_data_are_rejected(self):
         for capacity in [float('nan'), float('inf')]:
@@ -141,7 +131,7 @@ class OperatorsTests(unittest.TestCase):
         self.assertEqual(rng.checks, 2)
         self.assertEqual((target, mutant), before)
 
-    def test_exp_endpoints_and_singleton_guard(self):
+    def test_exp_endpoints_and_empty_route_allowed(self):
         target, mutant = [[1, 2], [3, 4]], [[4, 3], [2, 1]]
         self.assertEqual(op.crossover_exp(
             target, mutant, 0, CrossRandom([0.5])
@@ -153,7 +143,7 @@ class OperatorsTests(unittest.TestCase):
         self.assertEqual(op.crossover_exp(
             [[1, 2], [3]], [[1, 2, 3], []], 0,
             CrossRandom([0.5], route=0, position=2)
-        ), [[1, 2], [3]])
+        ), [[1, 2, 3], []])
         # Koddaki <= CR sınırı: tam 0, CR=0 için de başarılı kontroldür.
         rng = CrossRandom([0, 0.5])
         op.crossover_exp(target, mutant, 0, rng)
@@ -170,27 +160,20 @@ class OperatorsTests(unittest.TestCase):
                 result = op.crossover_exp(target, mutant, 0.7, random.Random(42))
                 self.assertEqual(sorted(c for r in result for c in r), [1, 2, 3])
                 self.assertEqual(len(result), 2)
-                self.assertTrue(all(not old or new for old, new in zip(target, result)))
                 self.assertEqual((target, mutant), before)
 
 
 class LocalSearchTests(unittest.TestCase):
-    def test_swapping_matches_independent_neighborhood_minimum(self):
-        routes = [[4, 1], [5, 2, 3]]
-        before = deepcopy(routes)
-        neighbors = [routes]
-        places = [(r, p) for r, route in enumerate(routes) for p in range(len(route))]
-        for i, (a, x) in enumerate(places):
-            for b, y in places[i + 1:]:
-                candidate = deepcopy(routes)
-                candidate[a][x], candidate[b][y] = candidate[b][y], candidate[a][x]
-                if independent_valid(candidate, DEMANDS, 10, 2):
-                    neighbors.append(candidate)
-        expected = min(independent_distance(r, MATRIX) for r in neighbors)
-        result = search.swap_search(routes, MATRIX, DEMANDS, 10)
-        self.assertEqual(independent_distance(result, MATRIX), expected)
-        self.assertTrue(independent_valid(result, DEMANDS, 10, 2))
-        self.assertEqual(routes, before)
+    def test_swapping_matches_author_multiple_move_example(self):
+        coords = dict(enumerate([(24,48),(26,2),(16,32),(31,25),(19,30),(22,37),(13,32)]))
+        matrix = problem.build_distance_matrix(coords)
+        demands = {i: int(i != 0) for i in coords}
+        routes = [[1,2,3],[4,5,6]]
+        result = search.swap_search(routes, matrix, demands, 10)
+        self.assertEqual(result, [[5,1,3],[4,2,6]])
+        self.assertEqual(independent_distance(result, matrix), 139)
+        self.assertTrue(independent_valid(result, demands, 10, 2))
+        self.assertEqual(routes, [[1,2,3],[4,5,6]])
 
     def test_relocation_improves_without_emptying_route(self):
         coords = {0: (0, 0), 1: (100, 0), 2: (1, 0), 3: (101, 0)}
@@ -213,7 +196,7 @@ class LocalSearchTests(unittest.TestCase):
         self.assertEqual(search.repair(failed, MATRIX, DEMANDS, 10, random.Random(42)), failed)
         self.assertFalse(independent_valid(failed, DEMANDS, 10, 2))
 
-    def test_repair_can_increase_distance_and_local_search_rolls_back(self):
+    def test_repair_can_increase_distance_and_local_search_keeps_repair(self):
         matrix = {a: {b: 0 for b in DEMANDS} for a in DEMANDS}
         matrix[2][3] = matrix[3][2] = 200
         matrix[2][5] = matrix[5][2] = 200
@@ -223,7 +206,8 @@ class LocalSearchTests(unittest.TestCase):
         returned, archived = search.local_search(
             OVERLOADED, matrix, DEMANDS, 10, 2, random.Random(42)
         )
-        self.assertEqual(returned, OVERLOADED)  # Önceki cezalı maliyet 100 < 200.
+        self.assertTrue(independent_valid(returned, DEMANDS, 10, 2))
+        self.assertEqual(independent_distance(returned, matrix), 200)
         self.assertTrue(independent_valid(archived, DEMANDS, 10, 2))
         self.assertEqual(independent_distance(archived, matrix), 200)
 
@@ -254,6 +238,7 @@ class SolverTests(unittest.TestCase):
         matrix = {a: {b: 0 for b in DEMANDS} for a in DEMANDS}
         matrix[2][5] = matrix[5][2] = 500
         self.assertEqual(solver.select(VALID, OVERLOADED, matrix, DEMANDS, 10, 2), OVERLOADED)
+        self.assertEqual(solver.select(VALID, OVERLOADED, matrix, DEMANDS, 10, 2, protect_target=True), VALID)
 
     def test_new_generation_preserves_previous_population(self):
         population = op.initialize_population(DEMANDS, 10, 2, 15, random.Random(42))
@@ -287,6 +272,7 @@ class SolverTests(unittest.TestCase):
         self.assertEqual(independent_distance(first['best_routes'], MATRIX), first['distance'])
         for result in (first, second):
             self.assertGreaterEqual(result.pop('elapsed_seconds'), 0)
+            self.assertGreaterEqual(result.pop('cpu_seconds'), 0)
         self.assertEqual(first, second)
         self.assertEqual(first['generations'], 20)
         self.assertEqual(first['stop_reason'], 'max_generations')
@@ -297,21 +283,21 @@ class SolverTests(unittest.TestCase):
         result = solver.solve(matrix, demands, 1, 1, max_generations=0, known_optimum=6)
         self.assertEqual(result['distance'], 6)
         self.assertEqual(result['generations'], 0)
-        self.assertEqual(result['stop_reason'], 'known_optimum')
+        self.assertEqual(result['stop_reason'], 'max_generations')
         result = solver.solve(matrix, demands, 1, 1, max_generations=0)
         self.assertEqual(result['stop_reason'], 'max_generations')
 
-    def test_mid_generation_optimum_is_not_counted_as_full_generation(self):
+    def test_optimum_stops_only_after_complete_generation(self):
         improved = [[1, 4], [2, 3, 5]]
-        initial = [deepcopy(VALID) for _ in range(3)]
+        initial = [deepcopy(VALID) for _ in range(4)]
         with patch.object(solver, 'initialize_population', return_value=initial):
             with patch.object(solver, 'mutate', side_effect=lambda *args: deepcopy(VALID)):
                 with patch.object(solver, 'crossover_exp', side_effect=lambda *args: deepcopy(VALID)):
                     with patch.object(solver, 'local_search', return_value=(improved, improved)):
-                        result = solver.solve(MATRIX, DEMANDS, 10, 2, population_size=3, known_optimum=29)
+                        result = solver.solve(MATRIX, DEMANDS, 10, 2, population_size=4, known_optimum=29)
         self.assertEqual(result['stop_reason'], 'known_optimum')
-        self.assertEqual(result['generations'], 0)
-        self.assertEqual(result['partial_generation_targets'], 1)
+        self.assertEqual(result['generations'], 1)
+        self.assertEqual(result['partial_generation_targets'], 0)
         self.assertEqual(result['distance'], 29)
 
     def test_no_feasible_solution(self):

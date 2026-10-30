@@ -1,22 +1,14 @@
-"""V2 tam hesaplama ile hızlı kenar hesaplamasının karar eşdeğerliği."""
+"""Mesafe farklarının bağımsız tam hesapla eşdeğerliği."""
 from copy import deepcopy
-import importlib.util
 import random
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 import local_search as fast
-import solver
 from problem import solution_distance
-
-spec = importlib.util.spec_from_file_location(
-    'search_v2_reference', Path(__file__).parent / 'fixtures/local_search_v2_reference.py')
-slow = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(slow)
 
 
 def case(seed):
@@ -57,40 +49,6 @@ class SearchEquivalenceTests(unittest.TestCase):
                         delta = (fast._removal_delta(routes[a], x, distances)
                                  + fast._insertion_delta(route, y, customer, distances))
                         self.assertEqual(delta, solution_distance(candidate, distances) - baseline)
-
-    def test_operators_and_full_search_preserve_routes_rng_and_parents(self):
-        for seed in range(300):
-            routes, distances, demands, capacity = case(seed)
-            before = deepcopy(routes)
-            args = (routes, distances, demands, capacity)
-            with self.subTest(seed=seed):
-                self.assertEqual(fast.swap_search(*args), slow.swap_search(*args))
-                self.assertEqual(fast.relocate_search(*args), slow.relocate_search(*args))
-                for name in ('repair', 'local_search'):
-                    r1, r2 = random.Random(seed), random.Random(seed)
-                    extra = (len(routes),) if name == 'local_search' else ()
-                    expected = getattr(slow, name)(*args, *extra, r1)
-                    actual = getattr(fast, name)(*args, *extra, r2)
-                    self.assertEqual(actual, expected)
-                    self.assertEqual(r1.getstate(), r2.getstate())
-                    self.assertEqual(routes, before)
-                    returned = actual[0] if name == 'local_search' else actual
-                    for route in returned:
-                        self.assertTrue(all(route is not parent for parent in routes))
-
-    def test_full_solver_without_time_limit_same_decisions(self):
-        for seed in range(8):
-            from problem import build_distance_matrix
-            distances = build_distance_matrix({i: ((i * 13) % 17, (i * 7) % 19)
-                                               for i in range(9)})
-            args = (distances, {i: (0 if i == 0 else 2) for i in range(9)}, 6, 3)
-            kwargs = dict(population_size=24, max_generations=3, seed=seed)
-            with patch.object(solver, 'local_search', slow.local_search):
-                expected = solver.solve(*args, **kwargs)
-            actual = solver.solve(*args, **kwargs)
-            for field in ('best_routes', 'distance', 'feasible', 'generations',
-                          'partial_generation_targets', 'stop_reason'):
-                self.assertEqual(actual[field], expected[field])
 
 
 if __name__ == '__main__':

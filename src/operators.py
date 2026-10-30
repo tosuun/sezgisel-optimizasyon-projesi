@@ -1,3 +1,9 @@
+"""Sabit CDELS kaynak sürümünün ayrık operatör akışı.
+
+Referans: 9c605e3; MIT bildirimi LICENSE-CDELS.txt içinde.
+Makale sözde kodundan ayrılan sayım/örnekleme ayrıntıları raporda belirtilir.
+"""
+
 import math
 
 
@@ -22,7 +28,7 @@ def find_customer(routes, customer):
     raise ValueError(f"Müşteri çözümde bulunamadı: {customer}")
 
 def initialize_individual(demands, capacity, max_vehicles, rng):
-    #K rota oluşturur; sığmayan müşterileri tek rastgele rotaya ekler.
+    # K rota oluşturur; yön seçimi ve kalan müşteriler sabit C kodunu izler.
     if not math.isfinite(capacity) or capacity <= 0:
         raise ValueError("Araç kapasitesi pozitif olmalı.")
 
@@ -45,37 +51,36 @@ def initialize_individual(demands, capacity, max_vehicles, rng):
     if sum(demands[customer] for customer in customers) > capacity * max_vehicles:
         raise ValueError("Toplam talep, araçların toplam kapasitesini aşıyor.")
 
-    # Her araç için ayrı bir rota listesi oluştur; boş rotalar da korunur.
+    # C kodu her bireyde rota doldurma yönünü rastgele seçer.
+    forward = rng.randrange(2) == 1
+    order = list(range(max_vehicles))
+    if not forward:
+        order.reverse()
     routes = [[] for _ in range(max_vehicles)]
-    remaining = customers
-
-    for route in routes:
-        candidates = remaining.copy()
-        # Tohuma bağlı rastgele sıra, başlangıç çözümlerinin farklılaşmasını sağlar.
-        rng.shuffle(candidates)
-        remaining = []
+    assigned = set()
+    for route_index in order:
+        checked = set(assigned)
         load = 0
-
-        for customer in candidates:
-            if load + demands[customer] <= capacity:
-                route.append(customer)
+        # C'deki do/while tüm müşteriler atanmışsa takılabilir; boş rotaları koruyarak çık.
+        while len(checked) < len(customers):
+            customer = customers[rng.randrange(len(customers))]
+            if customer in checked:
+                continue
+            checked.add(customer)
+            if load + demands[customer] < capacity:
+                routes[route_index].append(customer)
+                assigned.add(customer)
                 load += demands[customer]
-            else:
-                # Bu araca sığmayan müşteriyi sonraki araç için beklet.
-                remaining.append(customer)
-
-    # Bütün müşteriler çözümde bulunmalı; kapasite ihlali cezayla ele alınır.
-    if remaining:
-        selected_route = rng.randrange(max_vehicles)
-        routes[selected_route].extend(remaining)
+    # Referansın yönüne göre kalanlar son/ilk rotaya, kimlik sırasıyla eklenir.
+    routes[order[-1]].extend(customer for customer in customers if customer not in assigned)
 
     return routes
 
 
 def initialize_population(demands, capacity, max_vehicles, population_size, rng):
     #Birbirinden bağımsız NP başlangıç çözümü üretir.
-    if not isinstance(population_size, int) or population_size < 3:
-        raise ValueError("Popülasyon büyüklüğü en az 3 olan bir tam sayı olmalı.")
+    if not isinstance(population_size, int) or population_size < 4:
+        raise ValueError("Popülasyon büyüklüğü en az 4 olan bir tam sayı olmalı.")
 
     population = []
 
@@ -112,20 +117,20 @@ def perturbation_move(routes, reference, route_index, position):
         result[route_index][position] = customer
         result[source_route][source_position] = displaced_customer
 
-    elif len(result[source_route]) > 1:
-        # Hedef konum yok: kaynak rotayı boşaltmadan hedefin sonuna taşı.
+    else:
+        # C referansındaki taşıma kaynak rotayı boş bırakabilir; boş rota araç kullanılmamasıdır.
         result[source_route].pop(source_position)
         result[route_index].append(customer)
 
-    # Müşteri zaten yerindeyse veya tek müşterili rota korunuyorsa değişmez.
+    # Müşteri zaten hedefteyse takas çözümü değiştirmez.
     # Kapasite bu harekette kısıtlanmaz; sonrasında evaluate ile hesaplanır.
     return result
 
 
 def mutate(population, target_index, mutation_factor, rng):
-    #İki farklı referans bireyden, konum hareketleriyle mutant üretir.
-    if len(population) < 3:
-        raise ValueError("Mutasyon için en az 3 birey gerekli.")
+    # Kaynak kodun üç ebeveyn seçimini ve konum aktarımını uygular.
+    if len(population) < 4:
+        raise ValueError("Mutasyon için en az 4 birey gerekli.")
 
     if not isinstance(target_index, int) or not 0 <= target_index < len(population):
         raise ValueError("Hedef birey numarası geçersiz.")
@@ -139,13 +144,16 @@ def mutate(population, target_index, mutation_factor, rng):
     if not customers or 0 in customers or len(set(customers)) != len(customers):
         raise ValueError("Hedef çözüm müşterileri tam bir kez içermeli; depo rotada bulunamaz.")
 
-    possible_indices = [
-        index for index in range(len(population)) if index != target_index
-    ]
-    # Hedef dışında iki farklı birey seç; biri başlangıç, diğeri konum rehberidir.
-    base_index, reference_index = rng.sample(possible_indices, 2)
-    base = population[base_index]
-    reference = population[reference_index]
+    # x2 kullanılmasa da seçimi rastgele sayı akışını etkiler; sessizce kaldırılmaz.
+    count = len(population)
+    base_index, unused_index, reference_index = [rng.randrange(count) for _ in range(3)]
+    while unused_index == target_index:
+        unused_index = rng.randrange(count)
+    while reference_index in (target_index, unused_index):
+        reference_index = rng.randrange(count)
+    while base_index in (target_index, unused_index, reference_index):
+        base_index = rng.randrange(count)
+    base, reference = population[base_index], population[reference_index]
 
     for parent in (base, reference):
         parent_customers = sorted(customer for route in parent for customer in route)
@@ -153,13 +161,21 @@ def mutate(population, target_index, mutation_factor, rng):
             raise ValueError("Referans bireyler hedefle aynı rota sayısı ve müşterileri içermeli.")
 
     mutant = copy_solution(base)
-    # F, kaç müşteriye hareket uygulanacağını belirler; kesirli sonuç yukarı yuvarlanır.
-    movement_count = math.ceil(len(customers) * mutation_factor / 2)
-    selected_customers = rng.sample(customers, movement_count)
-
-    for customer in selected_customers:
+    # C customers_num depo dahil; int dönüşümü kesri atar, do/while en az bir kez çalışır.
+    movement_count = max(1, int((len(customers) + 1) * mutation_factor / 2))
+    possible = [0] + customers
+    available = len(customers)
+    for _ in range(movement_count):
+        index = rng.randrange(available) + 1
+        customer = possible[index]
         route_index, position = find_customer(reference, customer)
         mutant = perturbation_move(mutant, reference, route_index, position)
+        # Yayımlanmış listenin kaydırma sınırı korunur: aynı müşteri yeniden seçilebilir.
+        # Bu davranış Algoritma 1'deki tekrarsız seçimden farklıdır; raporda açıkça kayıtlıdır.
+        while index < available - 1:
+            possible[index] = possible[index + 1]
+            index += 1
+        available -= 1
 
     return mutant
 
@@ -193,8 +209,10 @@ def crossover_exp(target, mutant, crossover_rate, rng):
         closed.add(customer)
 
     # Rastgele rota/konumda CR kontrolü olmadan bir hareket girişimi.
-    nonempty_routes = [index for index, route in enumerate(mutant) if route]
-    first_route = rng.choice(nonempty_routes)
+    first_route = rng.randrange(len(mutant))
+    # Boş rota seçilirse kaynak koddaki gibi sıradaki dolu rotaya yürü.
+    while not mutant[first_route]:
+        first_route = (first_route + 1) % len(mutant)
     first_position = rng.randrange(len(mutant[first_route]))
     apply_component(first_route, first_position)
 

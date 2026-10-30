@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "created_date": "2026-10-29",
+  "created_date": "2026-10-30",
   "instance_manifest": "data/paper90_instances.json",
   "instances": [
     "P-n16-k8",
@@ -110,7 +110,8 @@
     "strategy": "rand/1/exp",
     "penalty": 100,
     "distance_rule": "floor(euclidean_distance + 0.5)",
-    "parameter_grid_search": false
+    "parameter_grid_search": false,
+    "implementation_protocol": "author_flow_9c605e3_safe"
   },
   "known_optimum_early_stop": true,
   "solution_id_convention": "cvrplib",
@@ -118,12 +119,12 @@
   "instance_order": "n_customers_then_name_ascending",
   "source_baseline_sha256": {
     "problem.py": "99df131b501e9fbf3bcf0663b918adcf31136fb8f12d3cbf050f53cff9c9ff43",
-    "operators.py": "679dd8dd431851f6218d260ffbe4a6e822f3a5d1300c92c03433f0b3c66535a8",
-    "local_search.py": "e0ae157b3deb0dd5908324b9694fde73ca43d4fbf15fc203b22e3552f36404a0",
-    "solver.py": "f685cf6a54652bc07c22a07af3c923a4bee4fdca57e8e021ffc63f3e3a82f5f5",
+    "operators.py": "b41313d3c6f19c096f324c0c91fb5eb6603ec796b7074167f6c31a691248d7b1",
+    "local_search.py": "b2c9ab92451007be2f0780b38c52798582adb98adc5d8c8aea5eae131fe7811d",
+    "solver.py": "158c6b3a321e545e70892e92a34bd25b6523623e91ce9c7f21394eca95dfcd93",
     "instance_io.py": "582939d75680d962cf49ff3bedeccd4432c3d77a19977bc410887490c7acf686",
     "run_pilot.py": "ff5de46a361352134484093e0cebf9bac04599aea1114a343eed9c7c9aee4462",
-    "run_experiments.py": "58407af25e977aaae248a524977f0fb0c95694f8c943a723d086b96d667d623a"
+    "run_experiments.py": "5d97bcb7e90909fa23bdd0a643e197feb3b2d926169f0e751429bed8c403eaef"
   },
   "environment_baseline_python": "3.12.14",
   "require_one_consistent_environment_per_experiment": true,
@@ -138,38 +139,48 @@
   "record_no_feasible_solution_and_errors": true,
   "abort_batch_on_invariant_or_independent_cost_mismatch": true,
   "execution_ready": true,
-  "profile_id": "paper90_3repeats",
-  "purpose": "three_repeat_limited_budget_paper_comparison",
+  "profile_id": "paper90_author_aligned_v1",
+  "purpose": "public_author_code_flow_with_paper_budget_and_documented_safety_fixes",
   "seeds": [
-    42,
-    43,
-    44
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
   ],
-  "repeat_count": 3,
-  "planned_run_count": 270,
+  "repeat_count": 10,
+  "planned_run_count": 900,
   "max_generations_by_group": {
-    "A": 20,
-    "B": 20,
-    "P": 20,
-    "E": 20,
-    "F": 20,
-    "M": 20
+    "A": 200000,
+    "B": 200000,
+    "P": 200000,
+    "E": 200000,
+    "F": 200000,
+    "M": 500000
   },
-  "time_limit_seconds": 120,
+  "time_limit_seconds": null,
   "time_limit_semantics": "Soft limit checked after initialization and between completed targets; active target finishes; cumulative active time and overshoot recorded.",
-  "maximum_nominal_serial_hours_excluding_overshoot": 9,
   "do_not_pool_with_full_profile_results": true,
   "required_stop_reasons": [
     "known_optimum",
-    "max_generations",
-    "time_limit"
+    "max_generations"
   ],
-  "prepared_stage": "three_repeat_validation_preparation_2026-10-29",
+  "prepared_stage": "author_alignment_verified_2026-10-30",
   "checkpoint_interval_seconds": 5,
   "runner_schema_version": 1,
   "resume_policy": "same identity; interrupted targets resume from last committed RNG/population; completed runs skipped; errors retained",
   "execution_gates_satisfied": [
-    "batch_runner_implemented",
-    "safe_time_limit_and_checkpoint_implemented"
-  ]
+    "author_operator_differential_tests_passed",
+    "small_instances_reach_published_optima",
+    "checkpoint_resume_verified",
+    "cpu_and_elapsed_time_recorded_separately"
+  ],
+  "seed_provenance": "Explicit Python convention 1..10; paper says first ten integers without an explicit list; exact published RNG stream is not established.",
+  "author_reference_commit": "9c605e3283cac03d0605128dc05cb3cd180411bb",
+  "pending_execution_gates": []
 }

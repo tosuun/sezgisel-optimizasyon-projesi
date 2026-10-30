@@ -1,69 +1,67 @@
-# CDELS - CVRP uygulaması ve makaleyle karşılaştırma
+# CDELS - CVRP Python uygulaması
 
-90 CVRP problemi üzerinde üç tekrarlı, sınırlı bütçeli doğrulama hazırlığı. Yeni deney henüz çalıştırılmadı. İkinci probleme uyarlama sonraki aşamadır.
+90 CVRP problemi için yazarların sabit kod akışına göre düzeltilmiş Python yeniden uygulaması. İkinci probleme uyarlama sonraki aşamadır.
+
+Önceki 270 koşu, bunlara ait tablolar/grafikler ve geçici düzeltme kontrol çıktıları proje dışına yedeklendi. `results/` yeni deney için temizdir. Eski kayıtlar yeni deneyle birleştirilmez.
+
+## Kaynak ve yöntem
+
+[ESLESTIRME.md](report/ESLESTIRME.md), düzeltilen akışı, kaynak kod/makale farklarını, sayfa numaralarını ve bilinen sınırları açıklar. Referans commit: `9c605e3283cac03d0605128dc05cb3cd180411bb`. Çeviride esas alınan kodun MIT bildirimi [LICENSE-CDELS.txt](LICENSE-CDELS.txt) içinde korunur.
+
+Arama işlemlerinin sırası için yayımlanan C kodu, deney NP/MaxGen/tekrar değerleri için makale esas alınır. NP depo hariç 3N'dir; C main'in depo dahil varsayılanı uygulanmaz. Mutasyonun int dönüşümü ve müşteri listesi, yerel arama ve onarım gibi kaynak/sözde kod farkları raporda saklanmadan belirtilir. Kamuya açık sürümün tarihsel deney commit'i olduğu veya aynı rastgele dizilerin üretildiği garanti edilmez.
 
 ## Dosyalar
 
 | Konum | İçerik |
 |---|---|
-| `src/` | Problem, operatörler, yerel arama ve çalıştırıcılar |
-| `data/` | 90 özgün CVRPLIB problemi, referans çözümleri ve makale değerleri |
-| `configs/dogrulama.json` | 90 problem × 3 tohum = 270 koşu |
+| `src/` | Problem hesabı, operatörler, yerel arama, çözücü ve çalıştırıcılar |
+| `data/` | 90 CVRPLIB problemi, referans çözümleri ve makale değerleri |
+| `configs/dogrulama.json` | Yeni protokol, 90 × 10 = 900 koşu |
 | `tools/analiz.py` | Çoklu tekrar analizi, makale tabloları ve grafikler |
-| `tests/` | Algoritma, dosya okuma, kesintiden devam ve analiz kontrolleri |
-| `results/experiments/` | Deney başlayınca üretilecek ham kayıtlar |
-| `results/analysis/` | Deney tamamlandıktan sonra üretilecek analiz |
+| `tests/` | Doğruluk, kesintiden devam, analiz ve gerçek C çıktılarıyla davranış denetimleri |
+| `report/ESLESTIRME.md` | Uygulama kararları ve doğrulama kanıtlarının kapsamı |
+| `results/experiments/` | Yeni deney başladığında üretilecek ham kayıtlar |
 
-Önceki tek tekrarlı sonuçlar ve bunlara dayanan rapor/sunum proje dışına yedeklendi. Kişisel konuşma notları `sunum/` içinde korundu; içlerindeki eski sayılar yeni sonuç değildir. Sunum ve kişisel notlar Git'e gönderilmez.
+Kişisel konuşma notları korunur; eski sayılar güncel sonuç değildir. `sunum/` Git dışında kalır.
 
-## Deney ayarları
+## Yeni deney ayarları
 
-Tohumlar **42, 43, 44**; NP=3N, F=CR=0.7, ceza=100, rand/1/exp. Her koşu en fazla **20 nesil** ve **120 saniyelik yumuşak süre sınırı** kullanır; aktif hedef tamamlanırken süre aşılabilir. Optimum bulunursa erken durur. Bu, makalenin 10 tekrar ve 200000/500000 nesillik bütçesinin birebir tekrarı değildir.
+Tohumlar **1..10**; NP=3N (depo hariç), F=CR=0.7, ceza=100, rand/1/exp. A/B/P/E/F için **200000**, M için **500000** tamamlanmış nesil; **süre kesmesi yok**; optimum nesil sonunda kontrol edilir. “İlk on tamsayı” ifadesindeki açık liste belirsizliği raporda belirtilir.
 
-Bütçe, üç tekrarın tümünde aynı tutulur. Sonradan 10 tekrara tamamlamak istenirse mevcut üç koşunun kaynak, veri, ortam ve parametre kimlikleri doğrulanarak aktarılması gerekir; yalnız `seeds` listesini değiştirmek kayıtları otomatik taşımaz.
+**900 koşuluk çalışma henüz yapılmadı. Büyük problemler uzun sürebilir; önceki kısa deneyin süresi tam bütçenin süre tahmini değildir.** Sürüm, ayar veya ortam değişirse ayrı deney kimliği oluşturulur. Eski sonuçlar aktarılmaz.
 
 ## Çalıştırma
 
-Python 3.12+ gerekir. Çözücü ve tablo analizi standart kütüphaneyi kullanır. Grafikler için isteğe bağlı `matplotlib` gerekir. Komutlar proje klasöründe, aynı Python ortamında çalıştırılır.
-
-Kontroller:
+Python 3.12+; çözücü/analiz standart kütüphane kullanır. Aşağıdaki komutlar mevcut `sezgisel-opt-env` ortamını kullanır. Grafikler için isteğe bağlı matplotlib gerekir. Proje klasöründe, aynı Python ortamında:
 
 ```bash
-python3 -B -m unittest discover -s tests -q
+../sezgisel-opt-env/bin/python3 -B -m unittest discover -s tests -q
 ```
 
-Plan kontrolü; deney başlatmaz:
+Yalnız plan kontrolü, deney başlatmaz:
 
 ```bash
-python3 -B src/run_experiments.py configs/dogrulama.json
+../sezgisel-opt-env/bin/python3 -B src/run_experiments.py configs/dogrulama.json
 ```
 
-270 koşuyu başlatma veya kesintiden sonra devam etme:
+Uzun deneyi kullanıcı başlatmak istediğinde:
 
 ```bash
-python3 -B src/run_experiments.py configs/dogrulama.json --execute
+../sezgisel-opt-env/bin/python3 -B src/run_experiments.py configs/dogrulama.json --execute
 ```
 
-Aynı kod, veri, ayar ve ortamla tamamlanan koşular atlanır. `Ctrl+C`, aktif hedefin ardından kayıtla durmayı ister. Kaynak dosyalarını, ayarları ve Python ortamını deney sırasında değiştirmeyin. Farklı kimlikli deneyler birleştirilmez.
+`Ctrl+C` aktif hedef ardından ara kayıtla durmayı ister; aynı komutla devam edilir. Biten koşular yeniden hesaplanmaz. CPU süresi ve geçen süre ayrı kaydedilir. Deney sırasında kaynak kodu, veriyi, ayarı ve Python ortamını değiştirmeyin.
 
-Deney tamamlandığında çıktısındaki `output_directory` yolunu kullanın:
+Tamamlanınca çıktının `output_directory` yolunu kullanın:
 
 ```bash
-python3 -B tools/analiz.py --experiment "DENEY_KLASORUNUN_TAM_YOLU" --output results/analysis --grafikler
+../sezgisel-opt-env/bin/python3 -B tools/analiz.py --experiment "YENI_DENEY_KLASORUNUN_TAM_YOLU" --output results/analysis_author_aligned --grafikler
 ```
 
-`DENEY_KLASORUNUN_TAM_YOLU` yerine gerçek yolu yazın. `results/analysis` mevcut olmamalı; yeniden analizde yeni bir çıktı adı seçin. Grafik istemiyorsanız `--grafikler` seçeneğini çıkarın. Analiz optimizasyon çalıştırmaz; bütün 270 terminal sonuç mevcut değilse nihai tablo üretmez.
+Çıktı klasörü yeni olmalı. Grafik istemiyorsanız `--grafikler` seçeneğini çıkarın. Analiz optimizasyon başlatmaz; bütün terminal koşular olmadan nihai tablo üretmez. En iyi, ortalama, örnek standart sapma, Best/Avg. BKS sapması, geçerli tekrar sayısı ve CPU/geçen süre raporlanır. Bir tekrar geçersizse problem Avg./SD değeri verilmez; başarısız koşu sessizce dışlanmaz.
 
-## Üretilecek karşılaştırmalar
+## Doğrulama kapsamı
 
-- `ozet.json`: Her koşu, problem başına Best/Avg./örnek SD, sapmalar ve grup özeti.
-- `makale_karsilastirma.md`: Makalenin s. 10-13'teki Tablo 6-12 düzeninde CDELS karşılaştırması. A, B, P ve E/F/M grupları ayrı; X1/X2 alt kümeleri korunur.
-- `figures/makale_grup_sapmalari.png`: Makale ve bizim Best/Avg. BKS sapmaları.
-- `figures/makale_optimum_sayilari.png`: En az bir tekrarda ve tüm tekrarlarda optimum bulunan problemler.
-- `figures/sapma_dagilimi.png`: Bizim Best/Avg. sapma dağılımı.
-- `figures/makale_sureleri.png`: Makalenin ortalama CPU süresi ve bizim ortalama geçen süremiz; farklı donanım ve bütçeler doğrudan hız üstünlüğü göstermez.
-- `figures/rota_A-n32-k5.png`: Geçerli çözüm varsa örnek problemin en iyi tekrarı.
+72 otomatik test; C kodundan elde edilmiş 560 referans örneği, ayrıca 40 örnekte çözücünün tamamladığı popülasyon ve rastgele sayı durumu karşılaştırması. Küçük gerçek problemlerde 6/6 optimum kontrolü. Bunlar bütün veri kümesinin nihai performans sonucu değildir.
 
-Geçerli çözüm bulunamayan koşular sayılır. Bir problemde bir tekrar bile geçersizse Avg./SD hesaplanmaz; yalnız başarılı koşularla ortalama iyileştirilmez. Best varsa geçerli koşuların en iyisidir ve geçerli tekrar sayısıyla birlikte verilir. SD örnek standart sapmadır (n-1); makalede bulunmayan SD veya ham tekrar değerleri üretilmez. Makalenin istatistiksel testleri bu tablolarda yeniden üretildiği iddia edilmez.
-
-Makale: Souza, Boeres ve Moraes, “A robust algorithm based on Differential Evolution with local search for the Capacitated Vehicle Routing Problem”, Swarm and Evolutionary Computation 77 (2023), 101245. [DOI](https://doi.org/10.1016/j.swevo.2023.101245). [Yazarların CDELS kodu](https://github.com/israelpereira55/CDELS) yöntem incelemesinde referans alınmıştır.
+Makale: Souza, Boeres ve Moraes, “A robust algorithm based on Differential Evolution with local search for the Capacitated Vehicle Routing Problem”, Swarm and Evolutionary Computation 77 (2023), 101245. [DOI](https://doi.org/10.1016/j.swevo.2023.101245). [Yazar kodu](https://github.com/israelpereira55/CDELS).

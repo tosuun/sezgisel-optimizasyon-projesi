@@ -135,7 +135,7 @@ def prepare_experiment(config_path, project_root=None, output_root=None):
         raise ValueError('Profilin örnek/tekrar/koşu sayıları tutarsız.')
     algorithm = config['algorithm']
     if (algorithm['strategy'] != 'rand/1/exp'
-            or algorithm['population_size_rule'] != '3 * n_customers_excluding_depot'
+            or algorithm['population_size_rule'] not in {'3 * n_customers_excluding_depot', '3 * n_nodes_including_depot'}
             or algorithm['distance_rule'] != 'floor(euclidean_distance + 0.5)'
             or algorithm.get('parameter_grid_search', False)):
         raise ValueError('Bu çalıştırıcı yalnız kayıtlı CDELS/mesafe kurallarını destekler.')
@@ -239,7 +239,7 @@ def run_experiment(config_path, *, project_root=None, output_root=None, execute=
     if not execute:
         return {'mode': 'plan_only', **plan}
     if not config.get('execution_ready', False):
-        raise RuntimeError('Profil çalıştırılmaya açık değil; F/G yürütme kapıları henüz kapanmadı.')
+        raise RuntimeError('Profil çalıştırılmaya açık değil; protokolün kontrol adımları tamamlanmalı.')
     # Eski sonuçlarla farklı kodun sonuçlarını aynı profil altında birleştirme.
     if prepared['baseline_changed_files']:
         raise ValidationFailure('Kod profildeki sürümden farklı; yeni sürümlü profil gerekli.')
@@ -356,7 +356,9 @@ def run_experiment(config_path, *, project_root=None, output_root=None, execute=
                         progress_callback({'run_id': run_id, **value})
                 result = solve(
                     instance['distances'], instance['demands'], instance['capacity'], instance['max_vehicles'],
-                    population_size=3 * instance['n_customers'],
+                    # Sabit kaynak kod NP hesabında depo dahil DIMENSION kullanır.
+                    population_size=3 * (instance['dimension'] if config['algorithm']['population_size_rule']
+                                         == '3 * n_nodes_including_depot' else instance['n_customers']),
                     mutation_factor=config['algorithm']['mutation_factor'],
                     crossover_rate=config['algorithm']['crossover_rate'], penalty=config['algorithm']['penalty'],
                     max_generations=config['max_generations_by_group'][entry['group']], seed=seed,

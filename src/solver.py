@@ -14,10 +14,13 @@ from operators import copy_solution, crossover_exp, initialize_population, mutat
 from problem import evaluate
 
 
-def select(target, trial, distances, demands, capacity, max_vehicles, penalty=100):
+def select(target, trial, distances, demands, capacity, max_vehicles, penalty=100, protect_target=False):
     # Kesin daha düşük cezalı maliyeti seçer; eşitlikte target kalır.
     target_score = evaluate(target, distances, demands, capacity, max_vehicles, penalty)
     trial_score = evaluate(trial, distances, demands, capacity, max_vehicles, penalty)
+    # Kaynak kod, popülasyondaki elit hedefin geçersiz bir trial ile silinmesini önler.
+    if protect_target and not trial_score['feasible']:
+        return copy_solution(target)
     return copy_solution(trial if trial_score['cost'] < target_score['cost'] else target)
 
 
@@ -43,52 +46,39 @@ def _reached(best, known_optimum, distances, demands, capacity, max_vehicles, pe
 
 
 def _advance_target(population, index, distances, demands, capacity, max_vehicles,
-                    mutation_factor, crossover_rate, rng, penalty, best, known_optimum):
-    """Tek hedefi bitirir; eski popülasyonu değiştirmez."""
-    def record(candidate):
-        nonlocal best
-        best = update_best_feasible(best, candidate, distances, demands,
-                                    capacity, max_vehicles, penalty)
-        return _reached(best, known_optimum, distances, demands, capacity, max_vehicles, penalty)
-
-    # Bir hedef için sıra: mutasyon → çaprazlama → yerel arama → seçim.
+                    mutation_factor, crossover_rate, rng, penalty, best, known_optimum,
+                    best_index=None):
+    """Bir hedefi bitirir; yalnız seçimden sağ kalan plan en iyiyi günceller."""
     target = population[index]
     mutant = mutate(population, index, mutation_factor, rng)
-    # Ara adımda optimum bulunursa kalan işlemleri yapmadan durabiliriz.
-    if record(mutant):
-        return None, best, True
     trial = crossover_exp(target, mutant, crossover_rate, rng)
-    if record(trial):
-        return None, best, True
-    improved, local_best = local_search(trial, distances, demands, capacity, max_vehicles, rng, penalty)
-    reached = record(local_best)
-    reached = record(improved) or reached
-    return select(target, improved, distances, demands, capacity, max_vehicles, penalty), best, reached
+    improved, _ = local_search(trial, distances, demands, capacity, max_vehicles, rng, penalty)
+    chosen = select(target, improved, distances, demands, capacity, max_vehicles, penalty,
+                    protect_target=index == best_index)
+    best = update_best_feasible(best, chosen, distances, demands, capacity, max_vehicles, penalty)
+    return chosen, best, _reached(best, known_optimum, distances, demands, capacity, max_vehicles, penalty)
 
 
 def next_generation(population, distances, demands, capacity, max_vehicles,
                     mutation_factor, crossover_rate, rng, penalty=100,
                     best_routes=None, known_optimum=None):
-    """Yeni popülasyon, en iyi geçerli plan, tamamlanan hedef sayısı."""
-    if len(population) < 3:
-        raise ValueError('Nesil üretimi için en az 3 birey gerekli.')
+    """Tam nesli üretir; optimum kontrolü nesil sonunda yapılır."""
+    if len(population) < 4:
+        raise ValueError('Nesil üretimi için en az 4 birey gerekli.')
     best = copy_solution(best_routes) if best_routes is not None else None
-    new_population = []
     for target in population:
         best = update_best_feasible(best, target, distances, demands, capacity, max_vehicles, penalty)
-    if not _reached(best, known_optimum, distances, demands, capacity, max_vehicles, penalty):
-        for index in range(len(population)):
-            chosen, best, reached = _advance_target(
-                population, index, distances, demands, capacity, max_vehicles,
-                mutation_factor, crossover_rate, rng, penalty, best, known_optimum)
-            if chosen is not None:
-                new_population.append(chosen)
-            if reached:
-                break
-    completed = len(new_population)
-    # Erken durulursa işlenmeyen bireyleri eski nesilden kopyala.
-    new_population.extend(copy_solution(routes) for routes in population[completed:])
-    return new_population, best, completed
+    best_index = next((i for i, target in enumerate(population) if target == best), None)
+    new_population = []
+    for index in range(len(population)):
+        previous_best = best
+        chosen, best, _ = _advance_target(
+            population, index, distances, demands, capacity, max_vehicles,
+            mutation_factor, crossover_rate, rng, penalty, best, known_optimum, best_index)
+        new_population.append(chosen)
+        if best != previous_best:
+            best_index = index
+    return new_population, best, len(new_population)
 
 
 def _digest(value):
@@ -143,14 +133,16 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
             if b in distances and a in distances[b] and value != distances[b][a]:
                 raise ValueError('Bu CVRP uygulaması simetrik mesafe matrisi kullanır.')
     if population_size is None:
-        population_size = 3 * len(customers)
-    if not isinstance(population_size, int) or population_size < 3:
-        raise ValueError('Popülasyon büyüklüğü en az 3 olmalı.')
+        # Makale Tablo 6: N depo hariçtir; dört farklı ebeveyn için küçük yapay örnekte en az 4.
+        population_size = max(4, 3 * len(customers))
+    if not isinstance(population_size, int) or population_size < 4:
+        raise ValueError('Popülasyon büyüklüğü en az 4 olmalı.')
     parameters = {
         'population_size': population_size, 'mutation_factor': mutation_factor,
         'crossover_rate': crossover_rate, 'penalty': penalty,
         'max_generations': max_generations, 'known_optimum': known_optimum,
-        'time_limit_seconds': time_limit_seconds}
+        'time_limit_seconds': time_limit_seconds,
+        'implementation_protocol': 'author_flow_9c605e3_safe'}
     # Ara kayıt yalnız aynı kod, problem ve ayarlarla devam ettirilebilir.
     source_hash = _digest({name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                            for name in ['solver.py', 'operators.py', 'local_search.py', 'problem.py']})
@@ -159,6 +151,7 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
                 'solver_source_sha256': source_hash, 'python_version': platform.python_version(),
                 'checkpoint_identity': checkpoint_identity}
     started = time.perf_counter()
+    cpu_started = time.process_time()
     # Rastgele sayı üreticisi yalnız bu koşuya aittir; tohum akışı tekrarlanabilir kılar.
     rng = random.Random(seed)
     resumed = resume_state is not None
@@ -172,6 +165,10 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
                 or state.get('next_target') != len(state['new_population'])
                 or not math.isfinite(state.get('elapsed_seconds', -1))
                 or state['elapsed_seconds'] < 0
+                or not math.isfinite(state.get('cpu_seconds', -1))
+                or state['cpu_seconds'] < 0
+                or (state.get('best_index') is not None
+                    and (not isinstance(state['best_index'], int) or not 0 <= state['best_index'] < population_size))
                 or state.get('status') not in {'running', 'interrupted', 'finished'}):
             raise ValueError('Ara kayıt popülasyon/sayaçları geçersiz.')
         for individual in state['population'] + state['new_population']:
@@ -186,16 +183,20 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
         # Tohumu yeniden başlatmak yerine kaydedilen rastgele sayı akışından devam et.
         rng.setstate(_as_tuple(state['rng_state']))
         elapsed_before = state['elapsed_seconds']
+        cpu_before = state['cpu_seconds']
     else:
         population = initialize_population(demands, capacity, max_vehicles, population_size, rng)
         best = None
         for individual in population:
             best = update_best_feasible(best, individual, distances, demands, capacity, max_vehicles, penalty)
+        best_index = next((i for i, individual in enumerate(population) if individual == best), None)
         state = {'identity': identity, 'population': population, 'new_population': [],
                  'next_target': 0, 'best_routes': best, 'generations': 0,
-                 'rng_state': rng.getstate(), 'elapsed_seconds': 0,
+                 'rng_state': rng.getstate(), 'elapsed_seconds': 0, 'cpu_seconds': 0,
+                 'best_index': best_index,
                  'status': 'running', 'stop_reason': None}
         elapsed_before = 0
+        cpu_before = 0
 
     # Devam edilen koşuda önceki aktif süre de toplam süreye katılır.
     def elapsed():
@@ -209,7 +210,7 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
                 'distance': score['distance'] if score else None, 'feasible': score is not None,
                 'generations': state['generations'], 'partial_generation_targets': state['next_target'],
                 'stop_reason': state['stop_reason'], 'seed': seed, 'parameters': parameters,
-                'elapsed_seconds': state['elapsed_seconds'],
+                'elapsed_seconds': state['elapsed_seconds'], 'cpu_seconds': state['cpu_seconds'],
                 'time_limit_overshoot_seconds': (max(0, state['elapsed_seconds'] - time_limit_seconds)
                                                  if time_limit_seconds is not None else 0),
                 'resumed_from_checkpoint': resumed}
@@ -226,13 +227,16 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
         current = elapsed()
         if checkpoint_callback is not None and (force or current - last_checkpoint >= checkpoint_interval_seconds):
             state['elapsed_seconds'] = current
+            state['cpu_seconds'] = cpu_before + time.process_time() - cpu_started
             checkpoint_callback(deepcopy(state))
             last_checkpoint = current
 
     checkpoint(force=True)
     try:
         while True:
-            if _reached(state['best_routes'], known_optimum, distances, demands, capacity, max_vehicles, penalty):
+            # Başlangıçta veya hedef ortasında değil, tamamlanan nesilden sonra dur.
+            if (state['generations'] > 0 and state['next_target'] == 0
+                    and _reached(state['best_routes'], known_optimum, distances, demands, capacity, max_vehicles, penalty)):
                 state['stop_reason'] = 'known_optimum'
                 break
             if state['generations'] >= max_generations:
@@ -245,9 +249,12 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
             if time_limit_seconds is not None and elapsed() >= time_limit_seconds:
                 state['stop_reason'] = 'time_limit'
                 break
+            previous_best = state['best_routes']
             chosen, best, reached = _advance_target(
                 state['population'], state['next_target'], distances, demands, capacity, max_vehicles,
-                mutation_factor, crossover_rate, rng, penalty, state['best_routes'], known_optimum)
+                mutation_factor, crossover_rate, rng, penalty, state['best_routes'], known_optimum, state['best_index'])
+            if best != previous_best:
+                state['best_index'] = state['next_target']
             state['best_routes'] = best
             if chosen is not None:
                 state['new_population'].append(chosen)
@@ -267,8 +274,9 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
                                    'partial_generation_targets': state['next_target'],
                                    'best_distance': score['distance'] if score else None,
                                    'elapsed_seconds': elapsed()})
-            checkpoint(force=reached)
-            if reached:
+            generation_reached = reached and state['next_target'] == 0
+            checkpoint(force=generation_reached)
+            if generation_reached:
                 state['stop_reason'] = 'known_optimum'
                 break
     except KeyboardInterrupt:
@@ -276,5 +284,6 @@ def solve(distances, demands, capacity, max_vehicles, population_size=None,
         state['stop_reason'] = 'interrupted'
     state['status'] = 'interrupted' if state['stop_reason'] == 'interrupted' else 'finished'
     state['elapsed_seconds'] = elapsed()
+    state['cpu_seconds'] = cpu_before + time.process_time() - cpu_started
     checkpoint(force=True)
     return make_result()

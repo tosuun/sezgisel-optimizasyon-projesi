@@ -87,7 +87,8 @@ def inspect_run(path, entry, experiment_identity, config):
             f'{name}: Referans çözüm veya makale değeri doğrulanamadı.')
 
     expected_parameters = {
-        'population_size': 3 * entry['n_customers'],
+        'population_size': 3 * (entry['dimension'] if config['algorithm']['population_size_rule']
+                                == '3 * n_nodes_including_depot' else entry['n_customers']),
         'mutation_factor': config['algorithm']['mutation_factor'],
         'crossover_rate': config['algorithm']['crossover_rate'],
         'penalty': config['algorithm']['penalty'],
@@ -95,6 +96,8 @@ def inspect_run(path, entry, experiment_identity, config):
         'time_limit_seconds': config.get('time_limit_seconds'),
         'known_optimum': entry['reference_cost'] if config['known_optimum_early_stop'] else None,
     }
+    if config['algorithm'].get('implementation_protocol'):
+        expected_parameters['implementation_protocol'] = config['algorithm']['implementation_protocol']
     require(all(result['parameters'][key] == value for key, value in expected_parameters.items()),
             f'{name}: Koşu ayarları deney profiliyle eşleşmiyor.')
     require(result['stop_reason'] in {'known_optimum', 'max_generations', 'time_limit'},
@@ -103,6 +106,8 @@ def inspect_run(path, entry, experiment_identity, config):
     require(isinstance(seconds, (int, float)) and 0 <= seconds < float('inf'),
             f'{name}: Geçersiz çalışma süresi.')
 
+    if result.get('cpu_seconds') is not None:
+        require(0 <= result['cpu_seconds'] < float('inf'), f'{name}: Geçersiz CPU süresi.')
     routes = result['best_routes']
     distance = None
     if routes is None:
@@ -121,7 +126,7 @@ def inspect_run(path, entry, experiment_identity, config):
     return {
         'name': name, 'seed': seed, 'status': record['status'], 'valid': routes is not None,
         'distance': distance, 'gap': percentage_gap(distance, entry['reference_cost']),
-        'seconds': seconds, 'stop': result['stop_reason'],
+        'seconds': seconds, 'cpu_seconds': result.get('cpu_seconds'), 'stop': result['stop_reason'],
         'generations': result['generations'], 'partial': result['partial_generation_targets'],
         'routes': routes,
     }
@@ -148,6 +153,7 @@ def summarize_instance(entry, runs):
         'paper_gap_best': percentage_gap(entry['paper_cdels_best'], entry['reference_cost']),
         'paper_gap_avg': percentage_gap(entry['paper_cdels_average'], entry['reference_cost']),
         'seconds_avg': statistics.mean(run['seconds'] for run in runs),
+        'cpu_seconds_avg': complete_mean(run['cpu_seconds'] for run in runs),
         'seconds_sum': sum(run['seconds'] for run in runs),
         'optimum_runs': sum(run['distance'] == entry['reference_cost'] for run in valid_runs),
         'all_optimum': all(run['valid'] and run['distance'] == entry['reference_cost'] for run in runs),
@@ -250,6 +256,8 @@ def analyze(experiment_directory):
         'mean_gap_best': complete_mean(row['gap_best'] for row in instances),
         'mean_gap_avg': complete_mean(row['gap_avg'] for row in instances),
         'total_solver_seconds': sum(run['seconds'] for run in runs),
+        'total_cpu_seconds': (sum(run['cpu_seconds'] for run in runs)
+                              if all(run['cpu_seconds'] is not None for run in runs) else None),
         'stops': dict(Counter(run['stop'] for run in runs)),
     }
     return {
@@ -268,6 +276,12 @@ def markdown_row(values):
     return '| ' + ' | '.join(map(str, values)) + ' |'
 
 
+def paper_budget_matches(config):
+    return (config['repeat_count'] == 10 and config.get('time_limit_seconds') is None
+            and all(config['max_generations_by_group'][group] == (500000 if group == 'M' else 200000)
+                    for group in GROUP_ORDER))
+
+
 def comparison_tables(data):
     config, instances = data['config'], data['instances']
     repeats = config['repeat_count']
@@ -280,16 +294,22 @@ def comparison_tables(data):
         'https://doi.org/10.1016/j.swevo.2023.101245', '',
         'Makalenin CDELS sütunları karşılaştırılır. Diğer algoritmaların sonuçları bu tablolara alınmaz.',
         'Best: tekrarların en düşük mesafesi. Avg.: aritmetik ortalama. SD: örnek standart sapma (n-1).',
-        f'Makale 10 tekrar kullanır; bizim deney {repeats} tekrar kullanır. Best değerleri farklı '
-        'sayıda denemeden seçildiği için eşit deney fırsatını temsil etmez.',
+        (f'Makale 10 tekrar kullanır; bizim deney {repeats} tekrar kullanır. Best değerleri farklı '
+         'sayıda denemeden seçildiği için eşit deney fırsatını temsil etmez.' if repeats != 10 else
+         'Her iki tarafta da problem başına 10 tekrar vardır; aynı sayılı C/Python tohumları aynı diziyi üretmez.'),
+        f"Yöntem protokolü: {config['algorithm'].get('implementation_protocol', 'önceki ön deney')}. "
+        'Kaynak/sözde kod ayrımları proje kökündeki report/ESLESTIRME.md içinde açıklanır.',
         'BKS sapması = 100 × (sonuç - BKS) / BKS. Grup sapmaları problem yüzdelerinin ortalamasıdır.',
         'Bir koşuda geçerli çözüm yoksa o problemde Avg./SD verilmez (-); Best varsa yalnız '
         'geçerli koşuların en iyisidir. Geçerli tekrar sayısı her satırda belirtilir.',
-        'Süre ve nesil bütçesi farkları nedeniyle bu çalışma sınırlı bütçeli doğrulamadır; '
-        'makalenin tam performansının yeniden üretildiği iddia edilmez.', '',
+        ('Tekrar, nesil ve süre kesmesi ayarları makaledeki bildirilen deney bütçesiyle eşleştirilmiştir. '
+         'Bu, yayımlanmış performansın elde edildiğini tek başına kanıtlamaz.' if paper_budget_matches(config) else
+         'Deney bütçesi makaleden farklıdır; bu sınırlı bütçeli ön deney tam performans tekrarı değildir.'), '',
         '## Tablo 6 - Parametreler (makale s. 10)', '',
         '| Parametre | Makale | Bizim deney |', '|---|---|---|',
-        '| NP | 3N | 3N |',
+        '| NP (N depo hariç müşteri sayısı) | 3N | '
+        + ('3(N+1), kamuya açık C koduyla aynı' if config['algorithm']['population_size_rule']
+           == '3 * n_nodes_including_depot' else '3N') + ' |',
         f"| F | 0.7 | {config['algorithm']['mutation_factor']} |",
         f"| CR | 0.7 | {config['algorithm']['crossover_rate']} |",
         f"| Strateji | rand/1/exp | {config['algorithm']['strategy']} |",
@@ -340,15 +360,15 @@ def comparison_tables(data):
     lines.extend([markdown_row(['Toplam'] + [
         f"{sum(group[field] for group in data['groups'])}/{len(instances)}" for field in columns]), '',
         '## Tablo 12 - Çalışma süreleri (makale s. 13)', '',
-        'Makale: 10 tekrarın ortalama CPU süresi. Bizim değer: tekrarların ortalama geçen aktif süresi. '
-        'Donanım, Python/C, durma koşulları ve bütçeler farklıdır; doğrudan hız üstünlüğü çıkarılamaz.', '',
-        '| Problem | Makale ortalama CPU (s) | Bizim ortalama geçen süre (s) | Durma nedenleri |',
-        '|---|---:|---:|---|',
+        'Makale: 10 tekrarın ortalama CPU süresi. Bizim CPU ve geçen aktif süre ayrı sütunlardadır. '
+        "Donanım ve Python/C farklıdır; bütçe ve durma koşulları Tablo 6'da belirtilir. Doğrudan hız üstünlüğü çıkarılamaz.", '',
+        '| Problem | Makale ortalama CPU (s) | Bizim ortalama CPU (s) | Bizim ortalama geçen süre (s) | Durma nedenleri |',
+        '|---|---:|---:|---:|---|',
     ])
     for row in instances:
         stops = ', '.join(f'{reason}: {count}' for reason, count in sorted(row['stops'].items()))
         lines.append(markdown_row([row['name'], format_number(row['paper_seconds']),
-                                   format_number(row['seconds_avg']), stops]))
+                                   format_number(row['cpu_seconds_avg']), format_number(row['seconds_avg']), stops]))
     return '\n'.join(lines) + '\n'
 
 
@@ -419,11 +439,13 @@ def draw_figures(data, output):
 
     # Süreler farklı ölçüm ve bütçelerdir; log eksen yalnız görünürlüğü artırır.
     instances = data['instances']
-    timed = [row for row in instances if row['paper_seconds'] > 0 and row['seconds_avg'] > 0]
+    time_field = 'cpu_seconds_avg' if all(row['cpu_seconds_avg'] is not None for row in instances) else 'seconds_avg'
+    time_label = 'CPU' if time_field == 'cpu_seconds_avg' else 'geçen'
+    timed = [row for row in instances if row['paper_seconds'] > 0 and row[time_field] > 0]
     figure, axes = plt.subplots(figsize=(10, 5), layout='constrained')
-    axes.scatter([row['paper_seconds'] for row in timed], [row['seconds_avg'] for row in timed], color=colors[2], alpha=.7)
+    axes.scatter([row['paper_seconds'] for row in timed], [row[time_field] for row in timed], color=colors[2], alpha=.7)
     axes.set(xscale='log', yscale='log', xlabel='Makale ortalama CPU süresi (s)',
-             ylabel='Bizim ortalama geçen süre (s)', title='Süreler: farklı donanım ve bütçeler, hız üstünlüğü ölçütü değil')
+             ylabel=f'Bizim ortalama {time_label} süresi (s)', title='Çalışma süreleri: donanım ve uygulama koşulları farklı')
     axes.grid(alpha=.15)
     figure.savefig(directory / 'makale_sureleri.png', dpi=180)
     plt.close(figure)
